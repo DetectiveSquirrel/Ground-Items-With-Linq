@@ -97,12 +97,13 @@ namespace Ground_Items_With_Linq
 
             if (wantedItems.Count > 0)
             {
-                var groupedItems = wantedItems.GroupBy(item => item.Name)
+                var closestItems = wantedItems.OrderBy(item => item.DistanceCustom).GroupBy(item => item.Name)
                                               .Select(group => new
                                               {
-                                                  Count = group.Count(),
-                                                  Name = group.Key
-                                              });
+                                                  Name = group.Key,
+                                                  ClosestItem = group.OrderBy(item => item.DistanceCustom).First(),
+                                                  Count = group.Count()
+                                              }).OrderBy(group => group.ClosestItem.DistanceCustom);
 
                 var startingPoint = new Vector2(Settings.RulesLocationX, Settings.RulesLocationY);
 
@@ -110,13 +111,21 @@ namespace Ground_Items_With_Linq
 
                 var textPadding = 10;
 
-                var longestString = groupedItems.OrderByDescending(item => item.Name.Length).First();
-                var sampleText = $"{longestString.Count}x {longestString.Name}";
+                // Find the maximum count and maximum distance
+                int maxCount = closestItems.Max(item => item.Count);
+                int maxDistance = (int)Math.Ceiling(closestItems.Max(item => item.ClosestItem.DistanceCustom));
+
+                // Calculate the width of the columns based on the maximum count and distance
+                int countWidth = maxCount.ToString().Length;
+                int distanceWidth = maxDistance.ToString().Length;
+
+                var longestString = closestItems.OrderByDescending(item => item.Name.Length).First();
+                var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({Math.Round(longestString.ClosestItem.DistanceCustom).ToString().PadLeft(distanceWidth)}) {longestString.Name} ";
                 var textHeight = Graphics.MeasureText(sampleText);
 
                 var serverItemsBox = new RectangleF
                 {
-                    Height = textHeight.Y * groupedItems.Count(),
+                    Height = textHeight.Y * closestItems.Count(),
                     Width = textHeight.X + (textPadding * 2),
                     X = startingPoint.X,
                     Y = startingPoint.Y
@@ -126,9 +135,9 @@ namespace Ground_Items_With_Linq
                 var textColor = new Color(255, 255, 255, 230);
                 Graphics.DrawBox(serverItemsBox, boxColor);
 
-                for (int i = 0; i < groupedItems.Count(); i++)
+                for (int i = 0; i < closestItems.Count(); i++)
                 {
-                    string stringItem = $"{groupedItems.ElementAt(i).Count}x {groupedItems.ElementAt(i).Name}";
+                    string stringItem = $"{closestItems.ElementAt(i).Count.ToString().PadLeft(countWidth)}x ({Math.Round(closestItems.ElementAt(i).ClosestItem.DistanceCustom).ToString().PadLeft(distanceWidth)}) {closestItems.ElementAt(i).Name}";
                     Graphics.DrawText(stringItem, new Vector2N(startingPoint.X + textPadding, startingPoint.Y + (textHeight.Y * i)), textColor);
                 }
 
