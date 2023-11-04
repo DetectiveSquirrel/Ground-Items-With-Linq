@@ -1,0 +1,2 @@
+Build failed:
+[4/11/2023 11:05:05 pm, D:\Tools\Path of Exile Tools\Main Overlay\PoeHelper\Plugins\Source\Ground Items With Linq\Ground Items With Linq.cs(68, 110)] CS1503: Argument 1: cannot convert from 'System.Collections.Generic.List<CustomItemData>' to 'System.Collections.Generic.List<uint>'
