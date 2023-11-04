@@ -22,7 +22,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="ItemFilterLibrary">
-      <HintPath>..\..\..\ItemFilterLibrary.dll</HintPath>
+      <HintPath>$(exapiPackage)\ItemFilterLibrary.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>

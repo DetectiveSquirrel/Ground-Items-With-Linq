@@ -16,11 +16,10 @@ public class CustomItemData : ItemData
     }
 
     public uint ServerID { get; set; }
-    public bool IsWanted { get; set; } = false;
-    public bool HasBeenChecked { get; set; } = false;
+    public bool? IsWanted { get; set; }
     public Vector2 Location { get; set; }
 
-    public float DistanceCustom { get; set; } = float.MaxValue;
+    public float DistanceCustom { get; set; }
 
     public override string ToString()
     {
@@ -32,7 +31,7 @@ public class CustomItemData : ItemData
         foreach (var item in customItems)
         {
             // Only update wanted items as everything else is not needed.
-            if (item.IsWanted)
+            if (item.IsWanted == true)
             {
                 item.DistanceCustom = gc.Player.GridPosNum.Distance(item.Location);
             }
