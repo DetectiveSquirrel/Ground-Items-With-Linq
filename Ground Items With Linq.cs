@@ -84,7 +84,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 int distanceWidth = maxDistance.ToString().Length;
 
                 var longestString = closestItems.MaxBy(item => item.Name.Length);
-                var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(longestString.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {longestString.Name} ";
+                var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(longestString.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {longestString.Name}";
                 var textSize = Graphics.MeasureText(sampleText);
 
                 var serverItemsBox = new RectangleF
@@ -94,7 +94,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     X = startingPoint.X,
                     Y = startingPoint.Y
                 };
-                var textPadding = 10;
+                var textPadding = Settings.TextPadding;
                 serverItemsBox.Inflate(textPadding, textPadding);
 
                 var boxColor = new Color(0, 0, 0, 150);

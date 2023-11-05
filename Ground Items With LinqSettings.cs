@@ -16,6 +16,7 @@ namespace Ground_Items_With_Linq
         public RangeNode<int> UpdateTimer { get; set; } = new RangeNode<int>(500, 0, 5000);
 
         public ToggleNode EnableTextDrawing { get; set; } = new ToggleNode(true);
+        public RangeNode<int> TextPadding { get; set; } = new RangeNode<int>(5, 0, 60);
         public RangeNode<int> RulesLocationX { get; set; } = new RangeNode<int>(800, 0, 2560);
         public RangeNode<int> RulesLocationY { get; set; } = new RangeNode<int>(800, 0, 1440);
 
