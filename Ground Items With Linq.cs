@@ -61,52 +61,55 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         if (wantedItems.Count > 0)
         {
-            var closestItems = wantedItems
-                .GroupBy(item => item.Name)
-                .Select(group => new
+            if (Settings.EnableTextDrawing)
+            {
+                var closestItems = wantedItems
+                    .GroupBy(item => item.Name)
+                    .Select(group => new
+                    {
+                        Name = group.Key,
+                        ClosestItem = group.MinBy(item => item.DistanceCustom),
+                        Count = group.Count()
+                    })
+                    .OrderBy(group => group.ClosestItem.DistanceCustom)
+                    .ToList();
+
+                var startingPoint = new Vector2(Settings.RulesLocationX, Settings.RulesLocationY);
+
+                // Find the maximum count and maximum distance
+                int maxDistance = (int)Math.Ceiling(closestItems.Max(item => item.ClosestItem.DistanceCustom));
+
+                // Calculate the width of the columns based on the maximum count and distance
+                int countWidth = closestItems.Max(item => item.Count).ToString().Length;
+                int distanceWidth = maxDistance.ToString().Length;
+
+                var longestString = closestItems.MaxBy(item => item.Name.Length);
+                var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(longestString.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {longestString.Name} ";
+                var textSize = Graphics.MeasureText(sampleText);
+
+                var serverItemsBox = new RectangleF
                 {
-                    Name = group.Key,
-                    ClosestItem = group.MinBy(item => item.DistanceCustom),
-                    Count = group.Count()
-                })
-                .OrderBy(group => group.ClosestItem.DistanceCustom)
-                .ToList();
+                    Height = textSize.Y * closestItems.Count,
+                    Width = textSize.X,
+                    X = startingPoint.X,
+                    Y = startingPoint.Y
+                };
+                var textPadding = 10;
+                serverItemsBox.Inflate(textPadding, textPadding);
 
-            var startingPoint = new Vector2(Settings.RulesLocationX, Settings.RulesLocationY);
+                var boxColor = new Color(0, 0, 0, 150);
+                var textColor = new Color(255, 255, 255, 230);
+                Graphics.DrawBox(serverItemsBox, boxColor);
 
-            // Find the maximum count and maximum distance
-            int maxDistance = (int)Math.Ceiling(closestItems.Max(item => item.ClosestItem.DistanceCustom));
-
-            // Calculate the width of the columns based on the maximum count and distance
-            int countWidth = closestItems.Max(item => item.Count).ToString().Length;
-            int distanceWidth = maxDistance.ToString().Length;
-
-            var longestString = closestItems.MaxBy(item => item.Name.Length);
-            var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(longestString.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {longestString.Name} ";
-            var textSize = Graphics.MeasureText(sampleText);
-
-            var serverItemsBox = new RectangleF
-            {
-                Height = textSize.Y * closestItems.Count,
-                Width = textSize.X,
-                X = startingPoint.X,
-                Y = startingPoint.Y
-            };
-            var textPadding = 10;
-            serverItemsBox.Inflate(textPadding, textPadding);
-
-            var boxColor = new Color(0, 0, 0, 150);
-            var textColor = new Color(255, 255, 255, 230);
-            Graphics.DrawBox(serverItemsBox, boxColor);
-
-            for (int i = 0; i < closestItems.Count; i++)
-            {
-                var group = closestItems[i];
-                string stringItem = $"{group.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(group.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {group.Name}";
-                Graphics.DrawText(stringItem, new Vector2N(startingPoint.X, startingPoint.Y + textSize.Y * i), textColor);
+                for (int i = 0; i < closestItems.Count; i++)
+                {
+                    var group = closestItems[i];
+                    string stringItem = $"{group.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(group.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {group.Name}";
+                    Graphics.DrawText(stringItem, new Vector2N(startingPoint.X, startingPoint.Y + textSize.Y * i), textColor);
+                }
             }
 
-            if (LargeMap.IsVisible)
+            if (Settings.EnableMapDrawing && LargeMap.IsVisible)
                 foreach (var item in wantedItems)
                 {
                     //Draw in world Line from player -> Item (thin, maybe color coded?)
@@ -115,8 +118,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     Graphics.DrawLine(
                         GameController.IngameState.Data.GetGridMapScreenPosition(item.Location),
                         GameController.IngameState.Data.GetGridMapScreenPosition(GameController.Player.GridPosNum),
-                        1f,
-                        Color.LimeGreen
+                        Settings.MapLineThickness,
+                        Settings.MapLineColor
                     );
                 }
         }
