@@ -49,8 +49,4 @@ public class CustomItemData : ItemData
             }
         }
     }
-    public static Color ConvertToSharpDXColor(BGRA bgra)
-    {
-        return new Color(bgra.R, bgra.G, bgra.B, bgra.A);
-    }
 }
