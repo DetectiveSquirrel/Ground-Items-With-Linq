@@ -7,6 +7,8 @@ using ItemFilterLibrary;
 using System.Collections.Generic;
 using Color = SharpDX.Color;
 using System.Numerics;
+using SharpDX;
+using Vector2 = System.Numerics.Vector2;
 
 public class CustomItemData : ItemData
 {
@@ -17,13 +19,13 @@ public class CustomItemData : ItemData
         Location = worldEntity.GridPosNum;
         DistanceCustom = worldEntity.DistancePlayer;
 
-        TextColor = ConvertToSharpDXColor(queriedItemLabel.Label.TextColor);
-        BorderColor = ConvertToSharpDXColor(queriedItemLabel.Label.BordColor);
-        BackgroundColor = ConvertToSharpDXColor(queriedItemLabel.Label.BgColor);
+        TextColor = queriedItemLabel.Label.TextColor;
+        BorderColor = queriedItemLabel.Label.BordColor;
+        BackgroundColor = queriedItemLabel.Label.BgColor;
     }
-    public Color TextColor { get; set; }
-    public Color BorderColor { get; set; }
-    public Color BackgroundColor { get; set; }
+    public ColorBGRA TextColor { get; set; }
+    public ColorBGRA BorderColor { get; set; }
+    public ColorBGRA BackgroundColor { get; set; }
     public uint ServerID { get; set; }
     public long LabelAddress { get; set; }
     public bool? IsWanted { get; set; }
@@ -36,7 +38,7 @@ public class CustomItemData : ItemData
         return $"{Name}, ID({ServerID}), IsWanted({IsWanted})";
     }
 
-    public static void UpdateDistance(List<CustomItemData> customItems, GameController gc)
+    public static void UpdateDistance(HashSet<CustomItemData> customItems, GameController gc)
     {
         foreach (var item in customItems)
         {

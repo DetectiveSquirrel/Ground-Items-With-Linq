@@ -21,8 +21,7 @@ namespace Ground_Items_With_Linq;
 
 public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqSettings>
 {
-    private readonly List<CustomItemData> StoredCustomItems = new List<CustomItemData>();
-    private List<LabelOnGround> ValidWorldItems = new List<LabelOnGround>();
+    private readonly HashSet<CustomItemData> StoredCustomItems = new HashSet<CustomItemData>();
 
     private readonly Stopwatch _timer = Stopwatch.StartNew();
 
@@ -55,8 +54,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override Job Tick()
     {
-        ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList();
-
         UpdateStoredItems(false);
         CustomItemData.UpdateDistance(StoredCustomItems, GameController);
 
@@ -99,7 +96,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         double phi;
         var distance = delta.GetPolarCoordinates(out phi);
         //float compassOffset = 15 + (Settings.TextSize * ImGui.GetFontSize() * 2); Using Fontin-SmallCaps
-        float compassOffset = 8 + (Settings.TextSize * ImGui.GetFontSize() * 2);
+        float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
         var textPos = position.Translate(-padding.X - compassOffset, padding.Y);
         Vector2N textSize = new Vector2N(0, 0);
         using (Graphics.SetTextScale(Settings.TextSize))
@@ -107,7 +104,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             //textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, "Fontin-SmallCaps:30", FontAlign.Right); // GGG's in game font
             textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right); // GGG's in game font
         }
-        var fullHeight = textSize.Y + 2 * padding.Y * drawStyle.BorderWidth;
+        var fullHeight = textSize.Y + 2 * padding.Y + 2 * drawStyle.BorderWidth;
         var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset;
         var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
         Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
@@ -124,12 +121,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     {
         if (_timer.ElapsedMilliseconds <= Settings.UpdateTimer && !forceUpdate) return;
 
+        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList();
+
         if (ValidWorldItems != null && GameController.Files != null)
         {
             var validWorldItemIds = ValidWorldItems.Select(e => e.Address).ToHashSet();
-            StoredCustomItems.RemoveAll(item => !validWorldItemIds.Contains(item.LabelAddress));
+            StoredCustomItems.RemoveWhere(item => !validWorldItemIds.Contains(item.LabelAddress));
             foreach (var entity in ValidWorldItems
-                         .ExceptBy(StoredCustomItems.Select(item => item.ServerID), x => x.ItemOnGround.Id))
+                         .ExceptBy(StoredCustomItems.Select(item => item.LabelAddress), x => x.Address))
             {
                 if (entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
