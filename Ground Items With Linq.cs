@@ -62,7 +62,17 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override void Render()
     {
-        var wantedItems = StoredCustomItems.Where(item => item.IsWanted == true).ToList();
+        var wantedItems = new List<CustomItemData>();
+
+        if (Settings.OrderByDistance)
+        {
+            wantedItems = StoredCustomItems.Where(item => item.IsWanted == true).OrderBy(group => group.DistanceCustom).ToList();
+        }
+        else
+        {
+            wantedItems = StoredCustomItems.Where(item => item.IsWanted == true).ToList();
+        }
+
 
         if (wantedItems.Count > 0)
         {
