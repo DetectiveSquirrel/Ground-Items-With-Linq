@@ -14,11 +14,13 @@ namespace Ground_Items_With_Linq
 
         public List<GroundRule> GroundRules { get; set; } = new List<GroundRule>();
         public RangeNode<int> UpdateTimer { get; set; } = new RangeNode<int>(500, 0, 5000);
+        public RangeNode<float> TextSize { get; set; } = new RangeNode<float>(1f, 1f, 20f);
 
         public ToggleNode EnableTextDrawing { get; set; } = new ToggleNode(true);
         public RangeNode<int> TextPadding { get; set; } = new RangeNode<int>(5, 0, 60);
-        public RangeNode<int> RulesLocationX { get; set; } = new RangeNode<int>(800, 0, 2560);
-        public RangeNode<int> RulesLocationY { get; set; } = new RangeNode<int>(800, 0, 1440);
+        public ColorNode LabelTrim { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
+        public ColorNode LabelBackground { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
+        public ColorNode LabelText { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
 
         public ToggleNode EnableMapDrawing { get; set; } = new ToggleNode(true);
         public ColorNode MapLineColor { get; set; } = new ColorNode(new Color(214, 0, 255, 255));

@@ -1,5 +1,4 @@
 ﻿using ExileCore;
-using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
@@ -13,18 +12,21 @@ using System.IO;
 using System.Linq;
 using Color = SharpDX.Color;
 using Vector2N = System.Numerics.Vector2;
+using ExileCore.Shared.Helpers;
+using RectangleF = SharpDX.RectangleF;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Elements;
 
 namespace Ground_Items_With_Linq;
 
 public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqSettings>
 {
     private readonly List<CustomItemData> StoredCustomItems = new List<CustomItemData>();
-    private List<Entity> ValidWorldItems = new List<Entity>();
+    private List<LabelOnGround> ValidWorldItems = new List<LabelOnGround>();
 
     private readonly Stopwatch _timer = Stopwatch.StartNew();
 
     private List<ItemFilter> _itemFilters;
-    private Element LargeMap;
 
     public Ground_Items_With_Linq()
     {
@@ -33,10 +35,17 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override bool Initialise()
     {
+        GameController.UnderPanel.WantUse(() => Settings.Enable);
+
         Settings.ReloadFilters.OnPressed = LoadRuleFiles;
         LoadRuleFiles();
 
         return true;
+    }
+
+    public override void OnLoad()
+    {
+        Graphics.InitImage("directions.png");
     }
 
     public override void AreaChange(AreaInstance area)
@@ -46,8 +55,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override Job Tick()
     {
-        ValidWorldItems = GameController.EntityListWrapper.ValidEntitiesByType[EntityType.WorldItem].ToList();
-        LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
+        ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList();
 
         UpdateStoredItems(false);
         CustomItemData.UpdateDistance(StoredCustomItems, GameController);
@@ -61,68 +69,55 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         if (wantedItems.Count > 0)
         {
-            if (Settings.EnableTextDrawing)
+            var playerPos = GameController.Player.GridPosNum;
+            var position = GameController.UnderPanel.StartDrawPoint.ToVector2Num();
+            var defaultAlertDrawStyle = new AlertDrawStyle("<SOMETHINGS WRONG>", Settings.LabelText, 1, Settings.LabelTrim, Settings.LabelBackground);
+
+            foreach (var entity in wantedItems)
             {
-                var closestItems = wantedItems
-                    .GroupBy(item => item.Name)
-                    .Select(group => new
-                    {
-                        Name = group.Key,
-                        ClosestItem = group.MinBy(item => item.DistanceCustom),
-                        Count = group.Count()
-                    })
-                    .OrderBy(group => group.ClosestItem.DistanceCustom)
-                    .ToList();
+                var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.Name, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
+                position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
 
-                var startingPoint = new Vector2(Settings.RulesLocationX, Settings.RulesLocationY);
-
-                // Find the maximum count and maximum distance
-                int maxDistance = (int)Math.Ceiling(closestItems.Max(item => item.ClosestItem.DistanceCustom));
-
-                // Calculate the width of the columns based on the maximum count and distance
-                int countWidth = closestItems.Max(item => item.Count).ToString().Length;
-                int distanceWidth = maxDistance.ToString().Length;
-
-                var longestString = closestItems.MaxBy(item => item.Name.Length);
-                var sampleText = $"{longestString.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(longestString.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {longestString.Name}";
-                var textSize = Graphics.MeasureText(sampleText);
-
-                var serverItemsBox = new RectangleF
-                {
-                    Height = textSize.Y * closestItems.Count,
-                    Width = textSize.X,
-                    X = startingPoint.X,
-                    Y = startingPoint.Y
-                };
-                var textPadding = Settings.TextPadding;
-                serverItemsBox.Inflate(textPadding, textPadding);
-
-                var boxColor = new Color(0, 0, 0, 150);
-                var textColor = new Color(255, 255, 255, 230);
-                Graphics.DrawBox(serverItemsBox, boxColor);
-
-                for (int i = 0; i < closestItems.Count; i++)
-                {
-                    var group = closestItems[i];
-                    string stringItem = $"{group.Count.ToString().PadLeft(countWidth)}x ({((int)Math.Round(group.ClosestItem.DistanceCustom)).ToString().PadLeft(distanceWidth)}) {group.Name}";
-                    Graphics.DrawText(stringItem, new Vector2N(startingPoint.X, startingPoint.Y + textSize.Y * i), textColor);
-                }
             }
-
-            if (Settings.EnableMapDrawing && LargeMap.IsVisible)
-                foreach (var item in wantedItems)
-                {
-                    //Draw in world Line from player -> Item (thin, maybe color coded?)
-                    //Only issue is the filter needs to be very strict unless they want eye aids
-
-                    Graphics.DrawLine(
-                        GameController.IngameState.Data.GetGridMapScreenPosition(item.Location),
-                        GameController.IngameState.Data.GetGridMapScreenPosition(GameController.Player.GridPosNum),
-                        Settings.MapLineThickness,
-                        Settings.MapLineColor
-                    );
-                }
         }
+    }
+
+    private Vector2N DrawText(Vector2N playerPos, Vector2N position, float BOTTOM_MARGIN, AlertDrawStyle kv, CustomItemData entity)
+    {
+        var padding = new Vector2N(5, 2);
+        var delta = entity.Location - playerPos;
+        var itemSize = DrawItem(kv, delta, position, padding, kv.Text);
+        if (itemSize != new Vector2()) position.Y += itemSize.Y + BOTTOM_MARGIN;
+
+        return position;
+    }
+
+    private Vector2 DrawItem(AlertDrawStyle drawStyle, Vector2N delta, Vector2N position, Vector2N padding, string text)
+    {
+        padding.X -= drawStyle.BorderWidth;
+        padding.Y -= drawStyle.BorderWidth;
+        double phi;
+        var distance = delta.GetPolarCoordinates(out phi);
+        //float compassOffset = 15 + (Settings.TextSize * ImGui.GetFontSize() * 2); Using Fontin-SmallCaps
+        float compassOffset = 8 + (Settings.TextSize * ImGui.GetFontSize() * 2);
+        var textPos = position.Translate(-padding.X - compassOffset, padding.Y);
+        Vector2N textSize = new Vector2N(0, 0);
+        using (Graphics.SetTextScale(Settings.TextSize))
+        {
+            //textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, "Fontin-SmallCaps:30", FontAlign.Right); // GGG's in game font
+            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right); // GGG's in game font
+        }
+        var fullHeight = textSize.Y + 2 * padding.Y * drawStyle.BorderWidth;
+        var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset;
+        var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
+        Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
+        var rectUV = MathHepler.GetDirectionsUV(phi, distance);
+        var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, textSize.Y, textSize.Y);
+        Graphics.DrawImage("directions.png", rectangleF, rectUV);
+
+        if (drawStyle.BorderWidth > 0) Graphics.DrawFrame(boxRect, drawStyle.BorderColor, drawStyle.BorderWidth);
+
+        return new Vector2(fullWidth, fullHeight);
     }
 
     private void UpdateStoredItems(bool forceUpdate)
@@ -131,14 +126,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         if (ValidWorldItems != null && GameController.Files != null)
         {
-            var validWorldItemIds = ValidWorldItems.Select(e => e.Id).ToHashSet();
-            StoredCustomItems.RemoveAll(item => !validWorldItemIds.Contains(item.ServerID));
+            var validWorldItemIds = ValidWorldItems.Select(e => e.Address).ToHashSet();
+            StoredCustomItems.RemoveAll(item => !validWorldItemIds.Contains(item.LabelAddress));
             foreach (var entity in ValidWorldItems
-                         .ExceptBy(StoredCustomItems.Select(item => item.ServerID), x => x.Id))
+                         .ExceptBy(StoredCustomItems.Select(item => item.ServerID), x => x.ItemOnGround.Id))
             {
-                if (entity.TryGetComponent<WorldItem>(out var worldItem))
+                if (entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
-                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity, GameController.Files));
+                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController.Files));
                 }
             }
         }
