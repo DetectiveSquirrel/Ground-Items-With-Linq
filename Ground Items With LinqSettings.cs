@@ -21,6 +21,7 @@ namespace Ground_Items_With_Linq
         public ColorNode LabelTrim { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
         public ColorNode LabelBackground { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
         public ColorNode LabelText { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
+        public ToggleNode OrderByDistance { get; set; } = new ToggleNode(true);
 
         public ToggleNode EnableMapDrawing { get; set; } = new ToggleNode(true);
         public ColorNode MapLineColor { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
