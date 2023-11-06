@@ -72,7 +72,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
             foreach (var entity in wantedItems)
             {
-                var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.Name, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
+                var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.LabelText, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
                 position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
 
             }

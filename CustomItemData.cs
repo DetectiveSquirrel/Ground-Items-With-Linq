@@ -22,10 +22,12 @@ public class CustomItemData : ItemData
         TextColor = queriedItemLabel.Label.TextColor;
         BorderColor = queriedItemLabel.Label.BordColor;
         BackgroundColor = queriedItemLabel.Label.BgColor;
+        LabelText = queriedItemLabel.Label.Text;
     }
     public ColorBGRA TextColor { get; set; }
     public ColorBGRA BorderColor { get; set; }
     public ColorBGRA BackgroundColor { get; set; }
+    public string LabelText { get; set; }
     public uint ServerID { get; set; }
     public long LabelAddress { get; set; }
     public bool? IsWanted { get; set; }
@@ -48,9 +50,5 @@ public class CustomItemData : ItemData
                 item.DistanceCustom = gc.Player.GridPosNum.Distance(item.Location);
             }
         }
-    }
-    public static Color ConvertToSharpDXColor(BGRA bgra)
-    {
-        return new Color(bgra.R, bgra.G, bgra.B, bgra.A);
     }
 }
