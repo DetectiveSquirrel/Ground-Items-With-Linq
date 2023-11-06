@@ -14,10 +14,8 @@ public class CustomItemData : ItemData
 {
     public CustomItemData(Entity queriedItem, Entity worldEntity, LabelOnGround queriedItemLabel, FilesContainer fs) : base(queriedItem, fs)
     {
-        ServerID = worldEntity.Id;
         LabelAddress = queriedItemLabel.Address;
         Location = worldEntity.GridPosNum;
-        DistanceCustom = worldEntity.DistancePlayer;
 
         TextColor = queriedItemLabel.Label.TextColor;
         BorderColor = queriedItemLabel.Label.BordColor;
@@ -28,7 +26,6 @@ public class CustomItemData : ItemData
     public ColorBGRA BorderColor { get; set; }
     public ColorBGRA BackgroundColor { get; set; }
     public string LabelText { get; set; }
-    public uint ServerID { get; set; }
     public long LabelAddress { get; set; }
     public bool? IsWanted { get; set; }
     public Vector2 Location { get; set; }
@@ -37,7 +34,7 @@ public class CustomItemData : ItemData
 
     public override string ToString()
     {
-        return $"{Name}, ID({ServerID}), IsWanted({IsWanted})";
+        return $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
     }
 
     public static void UpdateDistance(HashSet<CustomItemData> customItems, GameController gc)

@@ -1,6 +1,5 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory.Components;
-using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
 using ImGuiNET;
 using ItemFilterLibrary;
@@ -10,12 +9,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Color = SharpDX.Color;
 using Vector2N = System.Numerics.Vector2;
 using ExileCore.Shared.Helpers;
 using RectangleF = SharpDX.RectangleF;
 using ExileCore.PoEMemory;
-using ExileCore.PoEMemory.Elements;
 
 namespace Ground_Items_With_Linq;
 
@@ -26,6 +23,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     private readonly Stopwatch _timer = Stopwatch.StartNew();
 
     private List<ItemFilter> _itemFilters;
+    private Element LargeMap;
 
     public Ground_Items_With_Linq()
     {
@@ -54,6 +52,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override Job Tick()
     {
+        LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
+
         UpdateStoredItems(false);
         CustomItemData.UpdateDistance(StoredCustomItems, GameController);
 
@@ -76,6 +76,20 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
 
             }
+
+            if (Settings.EnableMapDrawing && LargeMap.IsVisible)
+                foreach (var item in wantedItems)
+                {
+                    //Draw in world Line from player -> Item (thin, maybe color coded?)
+                    //Only issue is the filter needs to be very strict unless they want eye aids
+
+                    Graphics.DrawLine(
+                        GameController.IngameState.Data.GetGridMapScreenPosition(item.Location),
+                        GameController.IngameState.Data.GetGridMapScreenPosition(GameController.Player.GridPosNum),
+                        Settings.MapLineThickness,
+                        Settings.MapLineColor
+                    );
+                }
         }
     }
 
