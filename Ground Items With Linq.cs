@@ -64,7 +64,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override void Render()
     {
-        var socketColors = new List<string>();
+        //var socketColors = new List<string>();
 
         //if (GameController.IngameState.UIHover is { Address: not 0 } h && h.Entity.IsValid)
         //{
