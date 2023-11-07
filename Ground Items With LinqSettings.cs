@@ -27,6 +27,16 @@ namespace Ground_Items_With_Linq
         public ColorNode MapLineColor { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
         public RangeNode<float> MapLineThickness { get; set; } = new RangeNode<float>(2.317f, 1f, 10f);
 
+        //Socket + Links Emulation Params
+        public RangeNode<int> EmuSocketSize { get; set; } = new RangeNode<int>(6, 1, 60);
+        public RangeNode<int> EmuSocketSpacing { get; set; } = new RangeNode<int>(4, 4, 60);
+        public ColorNode EmuRedSocket { get; set; } = new ColorNode(new Color(201, 13, 50, 255));
+        public ColorNode EmuGreenSocket { get; set; } = new ColorNode(new Color(158, 202, 13, 255));
+        public ColorNode EmuBlueSocket { get; set; } = new ColorNode(new Color(88, 130, 254, 255));
+        public ColorNode EmuWhiteSocket { get; set; } = new ColorNode(Color.White);
+        public ColorNode EmuLinkColor { get; set; } = new ColorNode(new Color(195, 195, 195, 255));
+
+
         [JsonIgnore]
         public ButtonNode ReloadFilters { get; set; } = new ButtonNode();
     }
