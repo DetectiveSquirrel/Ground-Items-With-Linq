@@ -34,6 +34,8 @@ namespace Ground_Items_With_Linq
         public ColorNode EmuGreenSocket { get; set; } = new ColorNode(new Color(158, 202, 13, 255));
         public ColorNode EmuBlueSocket { get; set; } = new ColorNode(new Color(88, 130, 254, 255));
         public ColorNode EmuWhiteSocket { get; set; } = new ColorNode(Color.White);
+        public ColorNode EmuAbyssalSocket { get; set; } = new ColorNode(new Color(59, 59, 59, 255));
+        public ColorNode EmuResonatorSocket { get; set; } = new ColorNode(new Color(249, 149, 13, 255));
         public ColorNode EmuLinkColor { get; set; } = new ColorNode(new Color(195, 195, 195, 255));
 
 

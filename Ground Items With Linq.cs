@@ -155,7 +155,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             }
             var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset + socketsSpacing;
             var socketsHeight = socketsSize + socketsSpacingHeight + socketBorderSpacing;
-            var actualFullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing * drawStyle.BorderWidth;
+            var actualFullHeight = textSize.Y + textToBorderSpacing * padding.Y * drawStyle.BorderWidth;
             var socketOverflow = Math.Max(0, socketsHeight - (actualFullHeight - socketBorderSpacing));
             var fullHeight = actualFullHeight + Math.Max(socketBorderSpacing, socketOverflow);
             var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
@@ -177,14 +177,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         else
         {
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
-            var textPos = position.Translate(-padding.X - compassOffset, padding.Y);
+            var textPos = position.Translate(-padding.X - compassOffset+ 1, padding.Y);
             Vector2N textSize = new Vector2N(0, 0);
             using (Graphics.SetTextScale(Settings.TextSize))
             {
                 textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
             }
-            var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing * drawStyle.BorderWidth;
-            var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset;
+            var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing + textToBorderSpacing * drawStyle.BorderWidth;
+            var fullWidth = textSize.X + textToBorderSpacing * padding.X * drawStyle.BorderWidth + compassOffset;
             var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
             Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
             var rectUV = MathHepler.GetDirectionsUV(phi, distance);
@@ -331,6 +331,12 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             case 'B':
                 socket.Color = Settings.EmuBlueSocket;
                 break;
+            case 'A':
+                socket.Color = Settings.EmuAbyssalSocket;
+                break;
+            case 'O':
+                socket.Color = Settings.EmuResonatorSocket;
+                break;
             default:
                 socket.Color = Color.Black;
                 break;
@@ -409,16 +415,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 switch (Direction)
                 {
                     case Direction.Right:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width - 1, newPosition.Y + boxSize.Height / 2),
-                                 new Vector2N(linkPosition.X - 1, linkPosition.Y + boxSize.Height / 2), 4);
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width, newPosition.Y + boxSize.Height / 2),
+                                 new Vector2N(linkPosition.X, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
                     case Direction.Down:
                         DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, startDrawLocation.Y + Position.Y + boxSize.Height),
                                  new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y), 4);
                         break;
                     case Direction.Left:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X-1, newPosition.Y + boxSize.Height / 2),
-                                 new Vector2N(linkPosition.X + boxSize.Width - 1, linkPosition.Y + boxSize.Height / 2), 4);
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X, newPosition.Y + boxSize.Height / 2),
+                                 new Vector2N(linkPosition.X + boxSize.Width, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
                     case Direction.None:
                         break;
