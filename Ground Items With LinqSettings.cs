@@ -3,7 +3,6 @@ using ExileCore.Shared.Nodes;
 using Newtonsoft.Json;
 using SharpDX;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace Ground_Items_With_Linq
 {

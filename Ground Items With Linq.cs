@@ -1,6 +1,8 @@
 ﻿using ExileCore;
+using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using ImGuiNET;
 using ItemFilterLibrary;
 using SharpDX;
@@ -9,11 +11,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Vector2N = System.Numerics.Vector2;
-using ExileCore.Shared.Helpers;
-using RectangleF = SharpDX.RectangleF;
-using ExileCore.PoEMemory;
 using Color = SharpDX.Color;
+using RectangleF = SharpDX.RectangleF;
+using Vector2N = System.Numerics.Vector2;
 
 namespace Ground_Items_With_Linq;
 
@@ -66,16 +66,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     {
         var socketColors = new List<string>();
 
-        if (GameController.IngameState.UIHover is { Address: not 0 } h && h.Entity.IsValid)
-        {
-            var entity = GameController.IngameState.UIHover?.Entity;
-            if (entity.TryGetComponent<Sockets>(out var sockets))
-            {
-                socketColors = sockets.SocketGroup;
+        //if (GameController.IngameState.UIHover is { Address: not 0 } h && h.Entity.IsValid)
+        //{
+        //    var entity = GameController.IngameState.UIHover?.Entity;
+        //    if (entity.TryGetComponent<Sockets>(out var sockets))
+        //    {
+        //        socketColors = sockets.SocketGroup;
 
-                SocketEmulation(socketColors);
-            }
-        }
+        //        SocketEmulation(socketColors);
+        //    }
+        //}
 
         var wantedItems = new List<CustomItemData>();
 
@@ -105,10 +105,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             if (Settings.EnableMapDrawing && LargeMap.IsVisible)
                 foreach (var item in wantedItems)
                 {
-                    //Draw in world Line from player -> Item (thin, maybe color coded?)
-                    //Only issue is the filter needs to be very strict unless they want eye aids
-
-                    this.Graphics.DrawLine(
+                    Graphics.DrawLine(
                         GameController.IngameState.Data.GetGridMapScreenPosition(item.Location),
                         GameController.IngameState.Data.GetGridMapScreenPosition(GameController.Player.GridPosNum),
                         Settings.MapLineThickness,
@@ -145,7 +142,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             Vector2N textSize = new Vector2N(0, 0);
             using (Graphics.SetTextScale(Settings.TextSize))
             {
-                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right); // GGG's in-game font
+                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
             }
             var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset + socketsSpacing;
             var socketsHeight = socketsSize + socketsSpacingHeight + 5;
@@ -175,7 +172,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             Vector2N textSize = new Vector2N(0, 0);
             using (Graphics.SetTextScale(Settings.TextSize))
             {
-                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right); // GGG's in-game font
+                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
             }
             var fullHeight = textSize.Y + 2 * padding.Y + 2 * drawStyle.BorderWidth;
             var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset;
@@ -225,7 +222,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     private bool ItemInFilter(ItemData item)
     {
-        return _itemFilters != null && 
+        return _itemFilters != null &&
                _itemFilters.Any(filter => filter.Matches(item));
     }
 
