@@ -93,6 +93,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         {
             var playerPos = GameController.Player.GridPosNum;
             var position = GameController.UnderPanel.StartDrawPoint.ToVector2Num();
+            position.X += Settings.LabelShift;
+
             var defaultAlertDrawStyle = new AlertDrawStyle("<SOMETHINGS WRONG>", Settings.LabelText, 1, Settings.LabelTrim, Settings.LabelBackground);
 
             foreach (var entity in wantedItems)
@@ -130,9 +132,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         padding.Y -= drawStyle.BorderWidth;
         double phi;
         var distance = delta.GetPolarCoordinates(out phi);
+        var socketBorderSpacing = 5;
+        var textToBorderSpacing = 2;
 
         var socketsSpacing = (Settings.EmuSocketSize * 2) + Settings.EmuSocketSpacing + 5;
         int sockets = entity.SocketInfo.SocketNumber;
+        Vector2N singleRowText = new Vector2N(0, 0);
+        using (Graphics.SetTextScale(Settings.TextSize))
+        {
+            singleRowText = Graphics.MeasureText("aAyY");
+        }
         if (sockets > 0)
         {
             var socketsSize = sockets < 5 ? Settings.EmuSocketSize * 2 : Settings.EmuSocketSize * 3;
@@ -144,15 +153,15 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
             }
-            var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset + socketsSpacing;
-            var socketsHeight = socketsSize + socketsSpacingHeight + 5;
-            var actualFullHeight = textSize.Y + 2 * padding.Y + 2 * drawStyle.BorderWidth;
-            var socketOverflow = Math.Max(0, socketsHeight - (actualFullHeight - 5));
-            var fullHeight = actualFullHeight + Math.Max(5, socketOverflow);
+            var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset + socketsSpacing;
+            var socketsHeight = socketsSize + socketsSpacingHeight + socketBorderSpacing;
+            var actualFullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing * drawStyle.BorderWidth;
+            var socketOverflow = Math.Max(0, socketsHeight - (actualFullHeight - socketBorderSpacing));
+            var fullHeight = actualFullHeight + Math.Max(socketBorderSpacing, socketOverflow);
             var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
             Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
             var rectUV = MathHepler.GetDirectionsUV(phi, distance);
-            var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, textSize.Y, textSize.Y);
+            var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, singleRowText.Y, singleRowText.Y);
             Graphics.DrawImage("directions.png", rectangleF, rectUV);
 
             if (drawStyle.BorderWidth > 0)
@@ -160,7 +169,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 Graphics.DrawFrame(boxRect, drawStyle.BorderColor, drawStyle.BorderWidth);
             }
 
-            var socketStartingPoint = new Vector2N(boxRect.TopRight.X - socketsSpacing, boxRect.TopRight.Y + 5);
+            var socketStartingPoint = new Vector2N(boxRect.TopRight.X - socketsSpacing, boxRect.TopRight.Y + socketBorderSpacing);
             SocketEmulation(entity.SocketInfo.SocketGroups.ToList(), socketStartingPoint);
 
             return new Vector2(fullWidth, fullHeight);
@@ -174,12 +183,12 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
             }
-            var fullHeight = textSize.Y + 2 * padding.Y + 2 * drawStyle.BorderWidth;
-            var fullWidth = textSize.X + 2 * padding.X + 2 * drawStyle.BorderWidth + compassOffset;
+            var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing * drawStyle.BorderWidth;
+            var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset;
             var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
             Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
             var rectUV = MathHepler.GetDirectionsUV(phi, distance);
-            var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, textSize.Y, textSize.Y);
+            var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, singleRowText.Y, singleRowText.Y);
             Graphics.DrawImage("directions.png", rectangleF, rectUV);
 
             if (drawStyle.BorderWidth > 0)
