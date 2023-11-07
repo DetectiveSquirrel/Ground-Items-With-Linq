@@ -511,8 +511,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         {
             rules[i].Enabled = refToggle;
             LoadRuleFiles();
-            StoredCustomItems.Clear();
-            UpdateStoredItems(true);
         }
     }
 
@@ -551,6 +549,9 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         {
             LogError($"An error occurred while loading rule files: {e.Message}");
         }
+
+        StoredCustomItems.Clear();
+        UpdateStoredItems(true);
     }
 
     #endregion
