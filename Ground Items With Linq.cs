@@ -415,16 +415,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 switch (Direction)
                 {
                     case Direction.Right:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width, newPosition.Y + boxSize.Height / 2),
-                                 new Vector2N(linkPosition.X, linkPosition.Y + boxSize.Height / 2), 4);
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width-1, newPosition.Y + boxSize.Height / 2),
+                                 new Vector2N(linkPosition.X-1, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
                     case Direction.Down:
                         DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, startDrawLocation.Y + Position.Y + boxSize.Height),
                                  new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y), 4);
                         break;
                     case Direction.Left:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X, newPosition.Y + boxSize.Height / 2),
-                                 new Vector2N(linkPosition.X + boxSize.Width, linkPosition.Y + boxSize.Height / 2), 4);
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X-1, newPosition.Y + boxSize.Height / 2),
+                                 new Vector2N(linkPosition.X + boxSize.Width-1, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
                     case Direction.None:
                         break;
