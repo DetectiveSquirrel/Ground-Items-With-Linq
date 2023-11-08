@@ -95,7 +95,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             var position = GameController.UnderPanel.StartDrawPoint.ToVector2Num();
             position.X += Settings.LabelShift;
 
-            var defaultAlertDrawStyle = new AlertDrawStyle("<SOMETHINGS WRONG>", Settings.LabelText, 1, Settings.LabelTrim, Settings.LabelBackground);
+            var defaultAlertDrawStyle = new AlertDrawStyle("<SOMETHINGS WRONG>", Color.White, 1, Color.White, Color.Black);
 
             if (Settings.EnableTextDrawing)
             {
@@ -386,6 +386,9 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 break;
             case 'B':
                 socket.Color = Settings.EmuBlueSocket;
+                break;
+            case 'W':
+                socket.Color = Settings.EmuWhiteSocket;
                 break;
             case 'A':
                 socket.Color = Settings.EmuAbyssalSocket;

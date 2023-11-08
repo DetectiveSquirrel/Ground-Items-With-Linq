@@ -20,9 +20,6 @@ namespace Ground_Items_With_Linq
         public ToggleNode ScaleFontWhenCustom { get; set; } = new ToggleNode(false);
         public RangeNode<int> TextPadding { get; set; } = new RangeNode<int>(5, 1, 60);
         public RangeNode<int> LabelShift { get; set; } = new RangeNode<int>(0, -600, 600);
-        public ColorNode LabelTrim { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
-        public ColorNode LabelBackground { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
-        public ColorNode LabelText { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
         public ToggleNode OrderByDistance { get; set; } = new ToggleNode(true);
 
         public ToggleNode EnableMapDrawing { get; set; } = new ToggleNode(true);
