@@ -152,17 +152,26 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
             var textPos = position.Translate(-padding.X - compassOffset - socketsSpacing, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
-            using (Graphics.SetTextScale(Settings.TextSize))
+
+            switch (Settings.ScaleFontWhenCustom.Value)
             {
-                if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                {
-                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                }
-                else
-                {
-                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
-                }
+                case true:
+                    using (Graphics.SetTextScale(Settings.TextSize))
+                        if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                        else
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                    break;
+                case false:
+                    if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                        using (Graphics.SetTextScale(Settings.TextSize))
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                    else
+                        textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                    break;
+
             }
+
             var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset + socketsSpacing;
             var socketsHeight = socketsSize + socketsSpacingHeight + socketBorderSpacing;
             var actualFullHeight = textSize.Y + textToBorderSpacing * padding.Y * drawStyle.BorderWidth;
@@ -189,17 +198,26 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
             var textPos = position.Translate(-padding.X - compassOffset+ 1, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
-            using (Graphics.SetTextScale(Settings.TextSize))
+
+            switch (Settings.ScaleFontWhenCustom.Value)
             {
-                if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                {
-                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                }
-                else
-                {
-                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
-                }
+                case true:
+                    using (Graphics.SetTextScale(Settings.TextSize))
+                        if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                        else
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                    break;
+                case false:
+                    if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                        using (Graphics.SetTextScale(Settings.TextSize))
+                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                    else
+                        textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                    break;
+
             }
+
             var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing + textToBorderSpacing * drawStyle.BorderWidth;
             var fullWidth = textSize.X + textToBorderSpacing * padding.X * drawStyle.BorderWidth + compassOffset;
             var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
