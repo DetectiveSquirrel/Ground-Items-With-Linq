@@ -138,7 +138,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         var socketBorderSpacing = 5;
         var textToBorderSpacing = 2;
 
-        var socketsSpacing = (Settings.EmuSocketSize * 2) + Settings.EmuSocketSpacing + 5;
         int sockets = entity.SocketInfo.SocketNumber;
         Vector2N singleRowText = new Vector2N(0, 0);
         using (Graphics.SetTextScale(Settings.TextSize))
@@ -147,8 +146,17 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         }
         if (sockets > 0)
         {
+            var socketsSpacing = (Settings.EmuSocketSize * 2) + Settings.EmuSocketSpacing + socketBorderSpacing;
             var socketsSize = sockets < 5 ? Settings.EmuSocketSize * 2 : Settings.EmuSocketSize * 3;
             var socketsSpacingHeight = sockets < 5 ? Settings.EmuSocketSpacing : Settings.EmuSocketSpacing * 2;
+
+            if (entity.Width == 1 || sockets == 1)
+            {
+                socketsSpacing = Settings.EmuSocketSize + socketBorderSpacing; // width of socket drawing
+                socketsSize = Settings.EmuSocketSize * sockets; // amount of sockets for height
+                socketsSpacingHeight = Settings.EmuSocketSpacing * 2; // amount of link spacing (socket total - 1)
+            }
+
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
             var textPos = position.Translate(-padding.X - compassOffset - socketsSpacing, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
@@ -189,7 +197,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             }
 
             var socketStartingPoint = new Vector2N(boxRect.TopRight.X - socketsSpacing, boxRect.TopRight.Y + socketBorderSpacing);
-            SocketEmulation(entity.SocketInfo.SocketGroups.ToList(), socketStartingPoint);
+            SocketEmulation(entity.SocketInfo.SocketGroups.ToList(), socketStartingPoint, entity.Width == 1);
 
             return new Vector2(fullWidth, fullHeight);
         }
@@ -272,12 +280,13 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     #region Socket and Link Emulation
 
-    public void SocketEmulation(List<string> socketGroups)
+    public void SocketEmulation(List<string> socketGroups, bool oneHander)
     {
         var startingPoint = new Vector2N(GameController.IngameState.MousePosX + 30, GameController.IngameState.MousePosY);
-        SocketEmulation(socketGroups, startingPoint);
+        SocketEmulation(socketGroups, startingPoint, oneHander);
     }
-    public void SocketEmulation(List<string> socketGroups, Vector2N startingPoint)
+
+    public void SocketEmulation(List<string> socketGroups, Vector2N startingPoint, bool oneHander)
     {
         var socketSize = Settings.EmuSocketSize;
         var spacing = Settings.EmuSocketSpacing;
@@ -291,6 +300,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 new Vector2N(0, (socketSize + spacing) * 2),
                 new Vector2N(socketSize + spacing, (socketSize + spacing) * 2),
             };
+
+        if (oneHander)
+        {
+            socketLayout = new List<Vector2N>
+            {
+                new Vector2N(0, 0),
+                new Vector2N(0, socketSize + spacing),
+                new Vector2N(0, (socketSize + spacing) * 2),
+            };
+        }
 
         var sockets = new List<Socket>();
         var currentGroup = 0;
@@ -329,7 +348,10 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                         break;
                 }
 
-                var socket = new Socket(Color.White, currentPosition, direction, Settings.EmuLinkColor);
+                if (oneHander)
+                    direction = Direction.Down;
+
+                var socket = new Socket(Color.White, currentPosition, direction, Settings.EmuLinkColor, oneHander);
                 SetSocketColor(charColor, socket);
 
                 if (charIndex == group.Length - 1)
@@ -346,10 +368,9 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         SetSocketConnections(sockets);
 
-        // Example usage of the Draw method
         foreach (var socket in sockets)
         {
-            socket.Draw(new Size2F(socketSize, socketSize), spacing, socket.Color, startingPoint);
+            socket.Draw(new Size2F(socketSize, socketSize), socket.Color, startingPoint, oneHander);
         }
     }
 
@@ -395,21 +416,25 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         public Vector2N Position { get; set; }
         public Socket Link { get; set; }
         public Direction Direction { get; set; }
+        public bool OneHander { get; set; }
 
-        public Socket(Color color, Vector2N position, Direction direction, Color linkColor)
+        public Socket(Color color, Vector2N position, Direction direction, Color linkColor, bool oneHander)
         {
             Color = color;
             Position = position;
             Direction = direction;
             LinkColor = linkColor;
+            OneHander = oneHander;
         }
 
-        public void Draw(Size2F boxSize, float spacing, Color color, Vector2N startDrawLocation)
+        public void Draw(Size2F boxSize, Color color, Vector2N startDrawLocation, bool oneHander)
         {
             var newPosition = new Vector2N(startDrawLocation.X + Position.X, startDrawLocation.Y + Position.Y);
+            if (oneHander)
+                newPosition = new Vector2N(startDrawLocation.X, startDrawLocation.Y + Position.Y);
 
 
-            DrawLineToNextSocketIfPresent(boxSize, startDrawLocation, UpdatePositionAccordingToDirection(boxSize, spacing, newPosition));
+            DrawLineToNextSocketIfPresent(boxSize, startDrawLocation, newPosition);
             DrawBoxAtPosition(boxSize, color, newPosition);
         }
 
@@ -417,26 +442,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         {
             // Draw box at current position
             DrawBox(new RectangleF(newPosition.X, newPosition.Y, boxSize.Width, boxSize.Height), color);
-        }
-
-        private Vector2N UpdatePositionAccordingToDirection(Size2F boxSize, float spacing, Vector2N newPosition)
-        {
-            switch (Direction)
-            {
-                case Direction.Right:
-                    newPosition.X = newPosition.X + boxSize.Width + spacing;
-                    break;
-                case Direction.Down:
-                    newPosition.Y = newPosition.Y + boxSize.Height + spacing;
-                    break;
-                case Direction.Left:
-                    newPosition.X = newPosition.X - boxSize.Width - spacing;
-                    break;
-                case Direction.None:
-                    newPosition.X = newPosition.X - boxSize.Width - spacing;
-                    break;
-            }
-            return newPosition;
         }
 
         private void DrawLineToNextSocketIfPresent(Size2F boxSize, Vector2N startDrawLocation, Vector2N newPosition)
