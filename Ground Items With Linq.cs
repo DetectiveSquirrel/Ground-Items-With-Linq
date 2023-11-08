@@ -97,11 +97,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
             var defaultAlertDrawStyle = new AlertDrawStyle("<SOMETHINGS WRONG>", Settings.LabelText, 1, Settings.LabelTrim, Settings.LabelBackground);
 
-            foreach (var entity in wantedItems)
+            if (Settings.EnableTextDrawing)
             {
-                var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.LabelText, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
-                position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
+                foreach (var entity in wantedItems)
+                {
+                    var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.LabelText, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
+                    position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
 
+                }
             }
 
             if (Settings.EnableMapDrawing && LargeMap.IsVisible)
@@ -147,11 +150,18 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             var socketsSize = sockets < 5 ? Settings.EmuSocketSize * 2 : Settings.EmuSocketSize * 3;
             var socketsSpacingHeight = sockets < 5 ? Settings.EmuSocketSpacing : Settings.EmuSocketSpacing * 2;
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
-            var textPos = position.Translate(-padding.X - compassOffset - socketsSpacing, padding.Y);
+            var textPos = position.Translate(-padding.X - compassOffset - socketsSpacing, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
             using (Graphics.SetTextScale(Settings.TextSize))
             {
-                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                {
+                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                }
+                else
+                {
+                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                }
             }
             var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset + socketsSpacing;
             var socketsHeight = socketsSize + socketsSpacingHeight + socketBorderSpacing;
@@ -177,11 +187,18 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         else
         {
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
-            var textPos = position.Translate(-padding.X - compassOffset+ 1, padding.Y);
+            var textPos = position.Translate(-padding.X - compassOffset+ 1, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
             using (Graphics.SetTextScale(Settings.TextSize))
             {
-                textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                if (string.IsNullOrEmpty(Settings.FontOverride.Value))
+                {
+                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
+                }
+                else
+                {
+                    textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
+                }
             }
             var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing + textToBorderSpacing * drawStyle.BorderWidth;
             var fullWidth = textSize.X + textToBorderSpacing * padding.X * drawStyle.BorderWidth + compassOffset;
