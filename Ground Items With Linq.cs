@@ -506,15 +506,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     {
         base.DrawSettings();
 
-        DrawFileExplorerOptions();
-        ImGui.Separator();
-        DrawGroundRulesOptions();
-    }
-
-    private void DrawFileExplorerOptions()
-    {
-        base.DrawSettings();
-
         if (ImGui.Button("Open Build Folder"))
         {
             var configDir = ConfigDirectory;
@@ -530,6 +521,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         }
 
         ImGui.Separator();
+
+        DrawGroundRulesOptions();
     }
 
     private void DrawGroundRulesOptions()
