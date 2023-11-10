@@ -264,7 +264,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 if (entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
-                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController.Files, GameController.Area));
+                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController));
                 }
             }
         }
