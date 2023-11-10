@@ -576,7 +576,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         if (!string.IsNullOrEmpty(Settings.CustomConfigDir))
         {
             var customConfigFileDirectory = Path.Combine(Path.GetDirectoryName(ConfigDirectory), Settings.CustomConfigDir);
-            DebugWindow.LogMsg(customConfigFileDirectory, 15);
 
             if (Directory.Exists(customConfigFileDirectory))
             {
