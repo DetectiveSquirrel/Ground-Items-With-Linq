@@ -1,4 +1,5 @@
-﻿using ExileCore.Shared.Interfaces;
+﻿using ExileCore.Shared.Attributes;
+using ExileCore.Shared.Interfaces;
 using ExileCore.Shared.Nodes;
 using Newtonsoft.Json;
 using SharpDX;
@@ -40,6 +41,9 @@ namespace Ground_Items_With_Linq
 
         [JsonIgnore]
         public ButtonNode ReloadFilters { get; set; } = new ButtonNode();
+
+        [Menu("Use a Custom \"\\config\\custom_folder\" folder ")]
+        public TextNode CustomConfigDir { get; set; } = new TextNode();
     }
 }
 

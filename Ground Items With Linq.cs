@@ -513,8 +513,21 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     private void DrawFileExplorerOptions()
     {
+        base.DrawSettings();
+
         if (ImGui.Button("Open Build Folder"))
-            Process.Start("explorer.exe", ConfigDirectory);
+        {
+            var configDir = ConfigDirectory;
+            var customConfigFileDirectory = !string.IsNullOrEmpty(Settings.CustomConfigDir)
+                ? Path.Combine(Path.GetDirectoryName(ConfigDirectory), Settings.CustomConfigDir)
+                : null;
+
+            var directoryToOpen = Directory.Exists(customConfigFileDirectory)
+                ? customConfigFileDirectory
+                : configDir;
+
+            Process.Start("explorer.exe", directoryToOpen);
+        }
 
         ImGui.Separator();
     }
@@ -566,6 +579,21 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     {
         var pickitConfigFileDirectory = ConfigDirectory;
         var existingRules = Settings.GroundRules;
+
+        if (!string.IsNullOrEmpty(Settings.CustomConfigDir))
+        {
+            var customConfigFileDirectory = Path.Combine(Path.GetDirectoryName(ConfigDirectory), Settings.CustomConfigDir);
+            DebugWindow.LogMsg(customConfigFileDirectory, 15);
+
+            if (Directory.Exists(customConfigFileDirectory))
+            {
+                pickitConfigFileDirectory = customConfigFileDirectory;
+            }
+            else
+            {
+                DebugWindow.LogError("[Ground Items] custom config folder does not exist.", 15);
+            }
+        }
 
         try
         {
