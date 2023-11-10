@@ -1,6 +1,7 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.Models;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using ImGuiNET;
@@ -73,7 +74,11 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         //    {
         //        socketColors = sockets.SocketGroup;
 
-        //        SocketEmulation(socketColors);
+        //        BaseItemType baseItemType = GameController.Files.BaseItemTypes.Translate(entity.Path);
+        //        if (baseItemType != null)
+        //        {
+        //            SocketEmulation(socketColors, baseItemType.Width == 1);
+        //        }
         //    }
         //}
 
@@ -259,7 +264,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 if (entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
-                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController.Files));
+                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController.Files, GameController.Area));
                 }
             }
         }

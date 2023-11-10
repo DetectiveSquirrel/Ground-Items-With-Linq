@@ -12,7 +12,7 @@ using Vector2 = System.Numerics.Vector2;
 
 public class CustomItemData : ItemData
 {
-    public CustomItemData(Entity queriedItem, Entity worldEntity, LabelOnGround queriedItemLabel, FilesContainer fs) : base(queriedItem, fs)
+    public CustomItemData(Entity queriedItem, Entity worldEntity, LabelOnGround queriedItemLabel, FilesContainer fs, AreaController area) : base(queriedItem, fs)
     {
         LabelAddress = queriedItemLabel.Address;
         Location = worldEntity.GridPosNum;
@@ -21,6 +21,8 @@ public class CustomItemData : ItemData
         BorderColor = queriedItemLabel.Label.BordColor;
         BackgroundColor = queriedItemLabel.Label.BgColor;
         LabelText = queriedItemLabel.Label.Text;
+
+        AreaInfo = new AreaData(area.CurrentArea.RealLevel, area.CurrentArea.Name, area.CurrentArea.Act, area.CurrentArea.Act > 10);
     }
     public ColorBGRA TextColor { get; set; }
     public ColorBGRA BorderColor { get; set; }
