@@ -1,7 +1,6 @@
 ﻿using ExileCore;
 using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
-using ExileCore.PoEMemory.Models;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using ImGuiNET;
@@ -58,7 +57,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
 
         UpdateStoredItems(false);
-        CustomItemData.UpdateDistance(StoredCustomItems, GameController);
 
         return null;
     }
@@ -253,7 +251,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     {
         if (_timer.ElapsedMilliseconds <= Settings.UpdateTimer && !forceUpdate) return;
 
-        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList();
+        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels.ToList();
 
         if (ValidWorldItems != null && GameController.Files != null)
         {
@@ -269,8 +267,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             }
         }
 
+        CustomItemData.UpdateDynamicData(StoredCustomItems);
+
         foreach (var item in StoredCustomItems)
         {
+            if (item.WasDynamiclyUpdated)
+            {
+                item.IsWanted = null;
+                item.WasDynamiclyUpdated = false;
+            }
+
             item.IsWanted ??= ItemInFilter(item);
         }
 

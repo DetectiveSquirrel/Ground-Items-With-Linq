@@ -35,14 +35,15 @@ public class CustomItemData : ItemData
         return $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
     }
 
-    public static void UpdateDistance(HashSet<CustomItemData> customItems, GameController gc)
+    public static void UpdateDynamicData(HashSet<CustomItemData> items)
     {
-        foreach (var item in customItems)
-        {
+        foreach (CustomItemData item in items) {
+            item.UpdateDynamicData();
+
             // Only update wanted items as everything else is not needed.
             if (item.IsWanted == true)
             {
-                item.DistanceCustom = gc.Player.GridPosNum.Distance(item.Location);
+                item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
             }
         }
     }
