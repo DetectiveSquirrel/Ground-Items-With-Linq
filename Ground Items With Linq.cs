@@ -267,14 +267,12 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             }
         }
 
-        CustomItemData.UpdateDynamicData(StoredCustomItems);
-
         foreach (var item in StoredCustomItems)
         {
-            if (item.WasDynamiclyUpdated)
+            if (item.WasDynamicallyUpdated)
             {
                 item.IsWanted = null;
-                item.WasDynamiclyUpdated = false;
+                item.WasDynamicallyUpdated = false;
             }
 
             item.IsWanted ??= ItemInFilter(item);
