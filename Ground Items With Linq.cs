@@ -91,7 +91,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             wantedItems = StoredCustomItems.Where(item => item.IsWanted == true).ToList();
         }
 
-
         if (wantedItems.Count > 0)
         {
             var playerPos = GameController.Player.GridPosNum;
@@ -106,7 +105,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 {
                     var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.LabelText, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
                     position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
-
                 }
             }
 
@@ -132,6 +130,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         return position;
     }
+
     private Vector2 DrawItem(AlertDrawStyle drawStyle, Vector2N delta, Vector2N position, Vector2N padding, string text, CustomItemData entity)
     {
         padding.X -= drawStyle.BorderWidth;
@@ -173,6 +172,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                         else
                             textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
                     break;
+
                 case false:
                     if (string.IsNullOrEmpty(Settings.FontOverride.Value))
                         using (Graphics.SetTextScale(Settings.TextSize))
@@ -180,7 +180,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     else
                         textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
                     break;
-
             }
 
             var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth + compassOffset + socketsSpacing;
@@ -207,7 +206,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         else
         {
             float compassOffset = 0 + (Settings.TextSize * ImGui.GetFontSize() * 2);
-            var textPos = position.Translate(-padding.X - compassOffset+ 1, padding.Y + textToBorderSpacing);
+            var textPos = position.Translate(-padding.X - compassOffset + 1, padding.Y + textToBorderSpacing);
             Vector2N textSize = new Vector2N(0, 0);
 
             switch (Settings.ScaleFontWhenCustom.Value)
@@ -219,6 +218,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                         else
                             textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
                     break;
+
                 case false:
                     if (string.IsNullOrEmpty(Settings.FontOverride.Value))
                         using (Graphics.SetTextScale(Settings.TextSize))
@@ -226,7 +226,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     else
                         textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right);
                     break;
-
             }
 
             var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing + textToBorderSpacing * drawStyle.BorderWidth;
@@ -245,7 +244,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             return new Vector2(fullWidth, fullHeight);
         }
     }
-
 
     private void UpdateStoredItems(bool forceUpdate)
     {
@@ -274,6 +272,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 item.IsWanted = null;
                 item.WasDynamicallyUpdated = false;
             }
+
+            item.UpdateDynamicData();
 
             item.IsWanted ??= ItemInFilter(item);
         }
@@ -340,18 +340,23 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     case 0:
                         direction = Direction.Right;
                         break;
+
                     case 1:
                         direction = Direction.Down;
                         break;
+
                     case 2:
                         direction = Direction.Left;
                         break;
+
                     case 3:
                         direction = Direction.Down;
                         break;
+
                     case 4:
                         direction = Direction.Right;
                         break;
+
                     case 5:
                         direction = Direction.None;
                         break;
@@ -390,21 +395,27 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             case 'R':
                 socket.Color = Settings.EmuRedSocket;
                 break;
+
             case 'G':
                 socket.Color = Settings.EmuGreenSocket;
                 break;
+
             case 'B':
                 socket.Color = Settings.EmuBlueSocket;
                 break;
+
             case 'W':
                 socket.Color = Settings.EmuWhiteSocket;
                 break;
+
             case 'A':
                 socket.Color = Settings.EmuAbyssalSocket;
                 break;
+
             case 'O':
                 socket.Color = Settings.EmuResonatorSocket;
                 break;
+
             default:
                 socket.Color = Color.Black;
                 break;
@@ -421,6 +432,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             }
         }
     }
+
     public class Socket
     {
         public Color Color { get; set; }
@@ -445,7 +457,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             if (oneHander)
                 newPosition = new Vector2N(startDrawLocation.X, startDrawLocation.Y + Position.Y);
 
-
             DrawLineToNextSocketIfPresent(boxSize, startDrawLocation, newPosition);
             DrawBoxAtPosition(boxSize, color, newPosition);
         }
@@ -465,17 +476,20 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 switch (Direction)
                 {
                     case Direction.Right:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width/2, newPosition.Y + boxSize.Height / 2),
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, newPosition.Y + boxSize.Height / 2),
                                  new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y + boxSize.Width / 2), 4);
                         break;
+
                     case Direction.Down:
-                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, startDrawLocation.Y + Position.Y + boxSize.Height/2),
+                        DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, startDrawLocation.Y + Position.Y + boxSize.Height / 2),
                                  new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
+
                     case Direction.Left:
                         DrawLine(new Vector2N(startDrawLocation.X + Position.X + boxSize.Width / 2, newPosition.Y + boxSize.Width / 2),
                                  new Vector2N(linkPosition.X + boxSize.Height / 2, linkPosition.Y + boxSize.Height / 2), 4);
                         break;
+
                     case Direction.None:
                         break;
                 }
@@ -502,7 +516,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         Down,
         Left
     }
-    #endregion
+
+    #endregion Socket and Link Emulation
 
     #region Rule Drawing and Loading
 
@@ -626,5 +641,5 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         UpdateStoredItems(true);
     }
 
-    #endregion
+    #endregion Rule Drawing and Loading
 }

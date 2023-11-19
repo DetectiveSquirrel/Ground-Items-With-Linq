@@ -1,10 +1,8 @@
 ﻿using ExileCore;
-using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Helpers;
 using ItemFilterLibrary;
-using System.Collections.Generic;
 using SharpDX;
 using Vector2 = System.Numerics.Vector2;
 
@@ -20,6 +18,7 @@ public class CustomItemData : ItemData
         BackgroundColor = queriedItemLabel.Label.BgColor;
         LabelText = queriedItemLabel.Label.Text;
     }
+
     public ColorBGRA TextColor { get; set; }
     public ColorBGRA BorderColor { get; set; }
     public ColorBGRA BackgroundColor { get; set; }
@@ -35,16 +34,11 @@ public class CustomItemData : ItemData
         return $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
     }
 
-    public static void UpdateDynamicData(HashSet<CustomItemData> items)
+    public static void UpdateDynamicData(CustomItemData item)
     {
-        foreach (CustomItemData item in items) {
-            item.UpdateDynamicData();
-
-            // Only update wanted items as everything else is not needed.
-            if (item.IsWanted == true)
-            {
-                item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
-            }
+        if (item.IsWanted == true)
+        {
+            item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
         }
     }
 }
