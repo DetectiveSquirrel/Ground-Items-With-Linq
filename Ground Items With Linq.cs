@@ -273,7 +273,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 item.WasDynamicallyUpdated = false;
             }
 
-            item.UpdateDynamicData();
+            item.UpdateDynamicCustomData();
 
             item.IsWanted ??= ItemInFilter(item);
         }

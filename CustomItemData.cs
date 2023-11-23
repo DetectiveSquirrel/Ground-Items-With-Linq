@@ -33,8 +33,11 @@ public class CustomItemData : ItemData
     {
         return $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
     }
+}
 
-    public static void UpdateDynamicData(CustomItemData item)
+public static class ItemExtensions
+{
+    public static void UpdateDynamicCustomData(this CustomItemData item)
     {
         if (item.IsWanted == true)
         {
