@@ -44,4 +44,4 @@ public static class ItemExtensions
             item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
         }
     }
-}
+} 

@@ -245,25 +245,39 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         }
     }
 
-    private void UpdateStoredItems(bool forceUpdate)
+    private void UpdateStoredItems(bool forceUpdate) => UpdateStoredItems(forceUpdate, false);
+
+    private void UpdateStoredItems(bool forceUpdate, bool doProfiler)
     {
         if (_timer.ElapsedMilliseconds <= Settings.UpdateTimer && !forceUpdate) return;
 
-        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels.ToList();
+        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList() ?? [];
+
+        var profilerTotal = doProfiler ? Stopwatch.StartNew() : null;
+
+        var profilerModifyStored = doProfiler ? Stopwatch.StartNew() : null;
 
         if (ValidWorldItems != null && GameController.Files != null)
         {
-            var validWorldItemIds = ValidWorldItems.Select(e => e.Address).ToHashSet();
+            var validWorldItemIds = new HashSet<long>(ValidWorldItems.Select(e => e.Address));
+
             StoredCustomItems.RemoveWhere(item => !validWorldItemIds.Contains(item.LabelAddress));
-            foreach (var entity in ValidWorldItems
-                         .ExceptBy(StoredCustomItems.Select(item => item.LabelAddress), x => x.Address))
+
+            var existingItemAddresses = new HashSet<long>(StoredCustomItems.Select(item => item.LabelAddress));
+
+            foreach (var entity in ValidWorldItems)
             {
-                if (entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
+                if (!existingItemAddresses.Contains(entity.Address) && entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
                     StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController));
                 }
             }
         }
+
+        profilerModifyStored?.Stop();
+
+        var profilerModifyLoopStored = doProfiler ? Stopwatch.StartNew() : null;
+        var profilerIsInFilter = doProfiler ? Stopwatch.StartNew() : null;
 
         foreach (var item in StoredCustomItems)
         {
@@ -275,7 +289,82 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
             item.UpdateDynamicCustomData();
 
+            if (doProfiler)
+                profilerIsInFilter.Start();
+
             item.IsWanted ??= ItemInFilter(item);
+
+            if (doProfiler)
+                profilerIsInFilter.Stop();
+        }
+
+        if (doProfiler)
+        {
+            profilerModifyLoopStored?.Stop();
+            profilerTotal?.Stop();
+
+            var logLines = new List<string>
+            {
+                // Add headers
+                "Profiler | Ticks | Nanoseconds (ns) | Milliseconds (ms)",
+                new string('-', 60) // Temporary separator length
+            };
+
+            // Add profiler results
+            AddProfilerResult("Modify Stored", profilerModifyStored, logLines);
+            AddProfilerResult("Modify Loop Stored", profilerModifyLoopStored, logLines);
+            AddProfilerResult("Check Is Wanted", profilerIsInFilter, logLines);
+            AddProfilerResult("Total", profilerTotal, logLines);
+
+            // Calculate the maximum width for each column
+            int[] columnWidths = CalculateColumnWidths(logLines);
+
+            // Adjust and print each log line
+            foreach (var line in logLines)
+            {
+                DebugWindow.LogMsg(FormatLine(line, columnWidths), 10);
+            }
+        }
+
+        void AddProfilerResult(string profilerName, Stopwatch profiler, List<string> logLines)
+        {
+            long ticks = profiler.ElapsedTicks;
+            double nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
+            double milliseconds = profiler.Elapsed.TotalMilliseconds;
+
+            logLines.Add($"{profilerName} | {ticks} | {nanoseconds:N0} | {milliseconds:N2}");
+        }
+
+        int[] CalculateColumnWidths(List<string> lines)
+        {
+            int maxCol1 = 0, maxCol2 = 0, maxCol3 = 0, maxCol4 = 0;
+
+            foreach (var line in lines)
+            {
+                var columns = line.Split('|');
+                if (columns.Length == 4) // Ensure there are 4 columns
+                {
+                    maxCol1 = Math.Max(maxCol1, columns[0].Trim().Length);
+                    maxCol2 = Math.Max(maxCol2, columns[1].Trim().Length);
+                    maxCol3 = Math.Max(maxCol3, columns[2].Trim().Length);
+                    maxCol4 = Math.Max(maxCol4, columns[3].Trim().Length);
+                }
+            }
+
+            return new int[] { maxCol1, maxCol2, maxCol3, maxCol4 };
+        }
+
+        string FormatLine(string line, int[] widths)
+        {
+            var columns = line.Split('|');
+            if (columns.Length == 4)
+            {
+                return $"{columns[0].Trim().PadRight(widths[0])} | {columns[1].Trim().PadLeft(widths[1])} | {columns[2].Trim().PadLeft(widths[2])} | {columns[3].Trim().PadLeft(widths[3])}";
+            }
+            else
+            {
+                return line; // Return the line as-is for headers and separators
+            }
         }
 
         _timer.Restart();
@@ -524,6 +613,23 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     public override void DrawSettings()
     {
         base.DrawSettings();
+        if (ImGui.Button("Clear StoredCustomItems and ReRun (PROFILER)"))
+        {
+            StoredCustomItems.Clear();
+
+            UpdateStoredItems(true, true);
+        }
+
+        if (ImGui.Button("Recheck all StoredCustomItems for IsWanted (PROFILER)"))
+        {
+            foreach (var item in StoredCustomItems)
+            {
+                item.IsWanted = null;
+                item.WasDynamicallyUpdated = false;
+            }
+
+            UpdateStoredItems(true, true);
+        }
 
         if (ImGui.Button("Open Build Folder"))
         {
