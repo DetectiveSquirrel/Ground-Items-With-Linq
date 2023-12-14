@@ -17,6 +17,8 @@ namespace Ground_Items_With_Linq
         public RangeNode<float> TextSize { get; set; } = new RangeNode<float>(1f, 1f, 20f);
 
         public ToggleNode EnableTextDrawing { get; set; } = new ToggleNode(true);
+        public ToggleNode IgnoreFullscreenPanels { get; set; } = new ToggleNode(false);
+        public ToggleNode IgnoreRightPanels { get; set; } = new ToggleNode(false);
         public TextNode FontOverride { get; set; } = new TextNode("");
         public ToggleNode ScaleFontWhenCustom { get; set; } = new ToggleNode(false);
         public RangeNode<int> TextPadding { get; set; } = new RangeNode<int>(5, 1, 60);

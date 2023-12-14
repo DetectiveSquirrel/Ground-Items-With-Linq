@@ -63,6 +63,18 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override void Render()
     {
+
+        var ingameUi = GameController.Game.IngameState.IngameUi;
+        if (!Settings.IgnoreFullscreenPanels && ingameUi.FullscreenPanels.Any(x => x.IsVisible))
+        {
+            return;
+        }
+
+        if (!Settings.IgnoreRightPanels && ingameUi.OpenRightPanel.IsVisible)
+        {
+            return;
+        }
+
         //var socketColors = new List<string>();
 
         //if (GameController.IngameState.UIHover is { Address: not 0 } h && h.Entity.IsValid)
