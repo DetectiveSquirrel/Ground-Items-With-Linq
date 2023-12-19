@@ -5,12 +5,14 @@ using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using ImGuiNET;
 using ItemFilterLibrary;
+using Newtonsoft.Json;
 using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Color = SharpDX.Color;
 using RectangleF = SharpDX.RectangleF;
 using Vector2N = System.Numerics.Vector2;
@@ -19,9 +21,12 @@ namespace Ground_Items_With_Linq;
 
 public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqSettings>
 {
-    private readonly HashSet<CustomItemData> StoredCustomItems = new HashSet<CustomItemData>();
+    private readonly HashSet<CustomItemData> StoredCustomItems = [];
     public static Graphics _graphics;
     private readonly Stopwatch _timer = Stopwatch.StartNew();
+    private const string CustomUniqueArtMappingPath = "uniqueArtMapping.json";
+    private const string DefaultUniqueArtMappingPath = "uniqueArtMapping.default.json";
+    public Dictionary<string, List<string>> UniqueArtMapping = [];
 
     private List<ItemFilter> _itemFilters;
     private Element LargeMap;
@@ -36,10 +41,99 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         _graphics = this.Graphics;
         GameController.UnderPanel.WantUse(() => Settings.Enable);
 
+        Settings.UniqueIdentificationSettings.RebuildUniqueItemArtMappingBackup.OnPressed += () =>
+        {
+            var mapping = GetGameFileUniqueArtMapping();
+            if (mapping != null)
+            {
+                File.WriteAllText(Path.Join(DirectoryFullName, CustomUniqueArtMappingPath), JsonConvert.SerializeObject(mapping, Formatting.Indented));
+            }
+        };
+        Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping.OnValueChanged += (_, _) =>
+        {
+            UniqueArtMapping = GetUniqueArtMapping();
+        };
+
         Settings.ReloadFilters.OnPressed = LoadRuleFiles;
         LoadRuleFiles();
 
         return true;
+    }
+
+    private Dictionary<string, List<string>> GetGameFileUniqueArtMapping()
+    {
+        if (GameController.Files.UniqueItemDescriptions.EntriesList.Count == 0)
+        {
+            GameController.Files.LoadFiles();
+        }
+
+        return GameController.Files.ItemVisualIdentities.EntriesList.Where(x => x.ArtPath != null)
+            .GroupJoin(GameController.Files.UniqueItemDescriptions.EntriesList.Where(x => x.ItemVisualIdentity != null),
+                x => x,
+                x => x.ItemVisualIdentity, (ivi, descriptions) => (ivi.ArtPath, descriptions: descriptions.ToList()))
+            .GroupBy(x => x.ArtPath, x => x.descriptions)
+            .Select(x => (x.Key, Names: x
+                .SelectMany(items => items)
+                .Select(item => item.UniqueName?.Text)
+                .Where(name => name != null)
+                .Distinct()
+                .ToList()))
+            .Where(x => x.Names.Count != 0)
+            .ToDictionary(x => x.Key, x => x.Names);
+    }
+
+    private Dictionary<string, List<string>> GetUniqueArtMapping()
+    {
+        Dictionary<string, List<string>> mapping = null;
+        if (!Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping &&
+            GameController.Files.UniqueItemDescriptions.EntriesList.Count != 0 &&
+            GameController.Files.ItemVisualIdentities.EntriesList.Count != 0)
+        {
+            mapping = GetGameFileUniqueArtMapping();
+        }
+
+        var customFilePath = Path.Join(DirectoryFullName, CustomUniqueArtMappingPath);
+        if (File.Exists(customFilePath))
+        {
+            try
+            {
+                mapping ??= JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(File.ReadAllText(customFilePath));
+            }
+            catch (Exception ex)
+            {
+                LogError($"Unable to load custom art mapping: {ex}");
+            }
+        }
+
+        mapping ??= GetEmbeddedUniqueArtMapping();
+        mapping ??= new Dictionary<string, List<string>>();
+        return mapping;
+    }
+
+    private Dictionary<string, List<string>> GetEmbeddedUniqueArtMapping()
+    {
+        try
+        {
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(DefaultUniqueArtMappingPath);
+            if (stream == null)
+            {
+                if (Settings.Debug)
+                {
+                    LogMessage($"Embedded stream {DefaultUniqueArtMappingPath} is missing");
+                }
+
+                return null;
+            }
+
+            using var reader = new StreamReader(stream);
+            var content = reader.ReadToEnd();
+            return JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(content);
+        }
+        catch (Exception ex)
+        {
+            LogError($"Unable to load embedded art mapping: {ex}");
+            return null;
+        }
     }
 
     public override void OnLoad()
@@ -49,6 +143,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override void AreaChange(AreaInstance area)
     {
+        UniqueArtMapping = GetUniqueArtMapping();
         StoredCustomItems.Clear();
     }
 
@@ -63,7 +158,6 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
     public override void Render()
     {
-
         var ingameUi = GameController.Game.IngameState.IngameUi;
         if (!Settings.IgnoreFullscreenPanels && ingameUi.FullscreenPanels.Any(x => x.IsVisible))
         {
@@ -115,7 +209,17 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 foreach (var entity in wantedItems)
                 {
-                    var alertDrawStyle = defaultAlertDrawStyle with { Text = entity.LabelText, TextColor = entity.TextColor, BackgroundColor = entity.BackgroundColor, BorderColor = entity.BorderColor };
+                    var text = entity.UniqueNameCandidates.Count != 0
+                                ? string.Join(" \\\n", entity.UniqueNameCandidates)
+                                : entity.LabelText;
+
+                    var alertDrawStyle = defaultAlertDrawStyle with
+                    {
+                        Text = text,
+                        TextColor = entity.TextColor,
+                        BackgroundColor = entity.BackgroundColor,
+                        BorderColor = entity.BorderColor
+                    };
                     position = DrawText(playerPos, position, Settings.TextPadding * Settings.TextSize, alertDrawStyle, entity);
                 }
             }
@@ -281,7 +385,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             {
                 if (!existingItemAddresses.Contains(entity.Address) && entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
-                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController));
+                    StoredCustomItems.Add(new CustomItemData(worldItem.ItemEntity, entity.ItemOnGround, entity, GameController, UniqueArtMapping));
                 }
             }
         }

@@ -12,10 +12,14 @@ namespace Ground_Items_With_Linq
         //Mandatory setting to allow enabling/disabling your plugin
         public ToggleNode Enable { get; set; } = new ToggleNode(false);
 
+        [Menu("Debug", "Display debug strings")]
+        public ToggleNode Debug { get; set; } = new ToggleNode(false);
+
         public List<GroundRule> GroundRules { get; set; } = new List<GroundRule>();
         public RangeNode<int> UpdateTimer { get; set; } = new RangeNode<int>(500, 0, 5000);
         public RangeNode<float> TextSize { get; set; } = new RangeNode<float>(1f, 1f, 20f);
 
+        public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new UniqueIdentificationSettings();
         public ToggleNode EnableTextDrawing { get; set; } = new ToggleNode(true);
         public ToggleNode IgnoreFullscreenPanels { get; set; } = new ToggleNode(false);
         public ToggleNode IgnoreRightPanels { get; set; } = new ToggleNode(false);
@@ -49,15 +53,19 @@ namespace Ground_Items_With_Linq
     }
 }
 
-public class GroundRule
+[Submenu]
+public class UniqueIdentificationSettings
 {
-    public string Name { get; set; } = "";
-    public string Location { get; set; } = "";
-    public bool Enabled { get; set; } = false;
-    public GroundRule(string name, string location, bool enabled)
-    {
-        Name = name;
-        Location = location;
-        Enabled = enabled;
-    }
+    [JsonIgnore]
+    public ButtonNode RebuildUniqueItemArtMappingBackup { get; set; } = new ButtonNode();
+
+    [Menu(null, "Use if you want to ignore what's in game memory and rely only on your custom/builtin file")]
+    public ToggleNode IgnoreGameUniqueArtMapping { get; set; } = new ToggleNode(false);
+}
+
+public class GroundRule(string name, string location, bool enabled)
+{
+    public string Name { get; set; } = name;
+    public string Location { get; set; } = location;
+    public bool Enabled { get; set; } = enabled;
 }
