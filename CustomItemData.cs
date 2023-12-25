@@ -10,42 +10,35 @@ using System.Collections.Generic;
 using System.Linq;
 using Vector2 = System.Numerics.Vector2;
 
-public class CustomItemData : ItemData
+namespace Ground_Items_With_Linq;
+
+public class CustomItemData(
+    Entity queriedItem,
+    Entity worldEntity,
+    LabelOnGround queriedItemLabel,
+    GameController gc,
+    IReadOnlyDictionary<string, List<string>> uniqueNameCandidates) : ItemData(queriedItem, gc)
 {
-    public CustomItemData(Entity queriedItem, Entity worldEntity, LabelOnGround queriedItemLabel, GameController gc, Dictionary<string, List<string>> uniqueNameCandidates) : base(queriedItem, gc)
-    {
-        LabelAddress = queriedItemLabel.Address;
-        Location = worldEntity.GridPosNum;
-
-        TextColor = queriedItemLabel.Label.TextColor;
-        BorderColor = queriedItemLabel.Label.BordColor;
-        BackgroundColor = queriedItemLabel.Label.BgColor;
-        LabelText = queriedItemLabel.Label.Text;
-
-        UniqueNameCandidates = queriedItem.TryGetComponent<Mods>(out var mods)
-                               && !mods.Identified
-                               && mods.ItemRarity == ItemRarity.Unique
-            ? (uniqueNameCandidates.GetValueOrDefault(queriedItem.GetComponent<RenderItem>()?.ResourcePath) ?? Enumerable.Empty<string>())
-                .Where(x => !x.StartsWith("Replica ")).ToList()
-            : [];
-    }
-
-    public ColorBGRA TextColor { get; set; }
-    public ColorBGRA BorderColor { get; set; }
-    public ColorBGRA BackgroundColor { get; set; }
-    public string LabelText { get; set; }
-    public long LabelAddress { get; set; }
+    public ColorBGRA TextColor { get; set; } = queriedItemLabel.Label.TextColor;
+    public ColorBGRA BorderColor { get; set; } = queriedItemLabel.Label.BordColor;
+    public ColorBGRA BackgroundColor { get; set; } = queriedItemLabel.Label.BgColor;
+    public string LabelText { get; set; } = queriedItemLabel.Label.Text;
+    public long LabelAddress { get; set; } = queriedItemLabel.Address;
     public bool? IsWanted { get; set; }
-    public Vector2 Location { get; set; }
+    public Vector2 Location { get; set; } = worldEntity.GridPosNum;
 
     public List<string> UniqueNameCandidates { get; set; }
+        = queriedItem.TryGetComponent<Mods>(out var mods) && !mods.Identified && mods.ItemRarity == ItemRarity.Unique
+            ? (uniqueNameCandidates.GetValueOrDefault(
+                  queriedItem.GetComponent<RenderItem>()
+                             ?.ResourcePath
+              ) ?? Enumerable.Empty<string>())
+              .Where(x => !x.StartsWith("Replica "))
+              .ToList() : [];
 
     public float DistanceCustom { get; set; }
 
-    public override string ToString()
-    {
-        return $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
-    }
+    public override string ToString() => $"{Name}, LabelID({LabelAddress}), IsWanted({IsWanted})";
 }
 
 public static class ItemExtensions
@@ -57,4 +50,4 @@ public static class ItemExtensions
             item.DistanceCustom = item.GameController.Player.GridPosNum.Distance(item.Location);
         }
     }
-} 
+}
