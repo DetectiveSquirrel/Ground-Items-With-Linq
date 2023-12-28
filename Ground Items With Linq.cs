@@ -6,7 +6,6 @@ using ExileCore.Shared.Helpers;
 using ImGuiNET;
 using ItemFilterLibrary;
 using Newtonsoft.Json;
-using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,10 +24,10 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     private const string DefaultUniqueArtMappingPath = "uniqueArtMapping.default.json";
     public static Graphics _graphics;
     private readonly Stopwatch _timer = Stopwatch.StartNew();
-    private readonly HashSet<CustomItemData> StoredCustomItems = [];
+    private readonly HashSet<CustomItemData> _storedCustomItems = [];
 
     private List<ItemFilter> _itemFilters;
-    private Element LargeMap;
+    private Element _largeMap;
     public Dictionary<string, List<string>> UniqueArtMapping = [];
 
     public Ground_Items_With_Linq()
@@ -161,12 +160,12 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     public override void AreaChange(AreaInstance area)
     {
         UniqueArtMapping = GetUniqueArtMapping();
-        StoredCustomItems.Clear();
+        _storedCustomItems.Clear();
     }
 
     public override Job Tick()
     {
-        LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
+        _largeMap = GameController.IngameState.IngameUi.Map.LargeMap;
         UpdateStoredItems(false);
         return null;
     }
@@ -205,14 +204,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         if (Settings.OrderByDistance)
         {
-            wantedItems = StoredCustomItems
+            wantedItems = _storedCustomItems
                           .Where(item => item.IsWanted == true)
                           .OrderBy(group => group.DistanceCustom)
                           .ToList();
         }
         else
         {
-            wantedItems = StoredCustomItems
+            wantedItems = _storedCustomItems
                           .Where(item => item.IsWanted == true)
                           .ToList();
         }
@@ -230,7 +229,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             var defaultAlertDrawStyle = new AlertDrawStyle(
                 "<SOMETHINGS WRONG>",
                 Color.White,
-                1,
+                Settings.BorderWidth,
                 Color.White,
                 Color.Black
             );
@@ -253,14 +252,14 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     position = DrawText(
                         playerPos,
                         position,
-                        Settings.TextPadding * Settings.TextSize,
+                        Settings.ItemSpacing,
                         alertDrawStyle,
                         entity
                     );
                 }
             }
 
-            if (!Settings.EnableMapDrawing || !LargeMap.IsVisible)
+            if (!Settings.EnableMapDrawing || !_largeMap.IsVisible)
             {
                 return;
             }
@@ -275,211 +274,139 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         }
     }
 
-    private Vector2N DrawText(Vector2N playerPos, Vector2N position, float BOTTOM_MARGIN, AlertDrawStyle kv,
+    private Vector2N DrawText(Vector2N playerPos, Vector2N position, float bottomMargin, AlertDrawStyle drawStyle,
         CustomItemData entity)
     {
-        var padding = new Vector2N(5, 2);
         var delta = entity.Location - playerPos;
-        var itemSize = DrawItem(kv, delta, position, padding, kv.Text, entity);
+        var itemSize = DrawItem(drawStyle, delta, position, drawStyle.Text, entity);
 
-        if (itemSize != new Vector2())
+        if (itemSize != 0)
         {
-            position.Y += itemSize.Y + BOTTOM_MARGIN;
+            position.Y += itemSize + bottomMargin;
         }
 
         return position;
     }
 
-    private Vector2 DrawItem(AlertDrawStyle drawStyle, Vector2N delta, Vector2N position, Vector2N padding, string text,
-        CustomItemData entity)
+    private float DrawItem(AlertDrawStyle drawStyle, Vector2N delta, Vector2N position, string text, CustomItemData entity)
     {
-        padding.X -= drawStyle.BorderWidth;
-        padding.Y -= drawStyle.BorderWidth;
+        var padding = Settings.TextPadding.Value;
+        var compassOffset = Settings.DrawCompass ? Settings.TextSize * ImGui.GetFontSize() * 2 : 0;
+        position += new Vector2N(-drawStyle.BorderWidth - compassOffset, drawStyle.BorderWidth);
         var distance = delta.GetPolarCoordinates(out var phi);
-        const int socketBorderSpacing = 5;
-        const int textToBorderSpacing = 2;
         var sockets = entity.SocketInfo.SocketNumber;
-        Vector2N singleRowText;
+        float singleRowTextHeight;
 
         using (Graphics.SetTextScale(Settings.TextSize))
         {
-            singleRowText = Graphics.MeasureText("aAyY");
+            singleRowTextHeight = Graphics.MeasureText("aAyY").Y;
         }
 
-        if (sockets > 0)
-        {
-            var socketsSpacing = Settings.EmuSocketSize * 2 + Settings.EmuSocketSpacing + socketBorderSpacing;
-            var socketsSize = sockets < 5 ? Settings.EmuSocketSize * 2 : Settings.EmuSocketSize * 3;
-            var socketsSpacingHeight = sockets < 5 ? Settings.EmuSocketSpacing : Settings.EmuSocketSpacing * 2;
+        var enableSocketDisplay = sockets > 0 && Settings.SocketDisplaySettings.ShowSockets;
 
+        int socketWidth;
+        int socketHeight;
+        int socketPadding;
+
+        if (enableSocketDisplay)
+        {
+            int NSocketSpace(int socketCount) => Settings.SocketDisplaySettings.SocketSize * socketCount + Settings.SocketDisplaySettings.SocketSpacing * (socketCount - 1);
+            socketPadding = Settings.SocketDisplaySettings.SocketPadding;
             if (entity.Width == 1 || sockets == 1)
             {
-                socketsSpacing = Settings.EmuSocketSize + socketBorderSpacing; // width of socket drawing
-                socketsSize = Settings.EmuSocketSize * sockets; // amount of sockets for height
-                socketsSpacingHeight = Settings.EmuSocketSpacing * 2; // amount of link spacing (socket total - 1)
+                socketWidth = NSocketSpace(1);
+                socketHeight = NSocketSpace(sockets);
             }
-
-            var compassOffset = 0 + Settings.TextSize * ImGui.GetFontSize() * 2;
-
-            var textPos = position.Translate(
-                -padding.X - compassOffset - socketsSpacing,
-                padding.Y + textToBorderSpacing
-            );
-
-            var textSize = new Vector2N(0, 0);
-
-            switch (Settings.ScaleFontWhenCustom.Value)
+            else
             {
-                case true:
-                    using (Graphics.SetTextScale(Settings.TextSize))
-                    {
-                        if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                        {
-                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                        }
-                        else
-                        {
-                            textSize = Graphics.DrawText(
-                                text,
-                                textPos,
-                                drawStyle.TextColor,
-                                Settings.FontOverride.Value,
-                                FontAlign.Right
-                            );
-                        }
-                    }
-
-                    break;
-                case false:
-                    if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                    {
-                        using (Graphics.SetTextScale(Settings.TextSize))
-                        {
-                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                        }
-                    }
-                    else
-                    {
-                        textSize = Graphics.DrawText(
-                            text,
-                            textPos,
-                            drawStyle.TextColor,
-                            Settings.FontOverride.Value,
-                            FontAlign.Right
-                        );
-                    }
-
-                    break;
+                socketWidth = NSocketSpace(2);
+                socketHeight = sockets switch
+                {
+                    < 3 => NSocketSpace(1),
+                    < 5 => NSocketSpace(2),
+                    _ => NSocketSpace(3)
+                };
             }
-
-            var fullWidth = textSize.X + textToBorderSpacing * padding.X + textToBorderSpacing * drawStyle.BorderWidth +
-                            compassOffset + socketsSpacing;
-
-            var socketsHeight = socketsSize + socketsSpacingHeight + socketBorderSpacing;
-            var actualFullHeight = textSize.Y + textToBorderSpacing * padding.Y * drawStyle.BorderWidth;
-            var socketOverflow = Math.Max(0, socketsHeight - (actualFullHeight - socketBorderSpacing));
-            var fullHeight = actualFullHeight + Math.Max(socketBorderSpacing, socketOverflow);
-            var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
-            Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
-            var rectUV = MathHepler.GetDirectionsUV(phi, distance);
-
-            var rectangleF = new RectangleF(
-                position.X - padding.X - compassOffset + 6,
-                position.Y + padding.Y,
-                singleRowText.Y,
-                singleRowText.Y
-            );
-
-            Graphics.DrawImage("directions.png", rectangleF, rectUV);
-
-            if (drawStyle.BorderWidth > 0)
-            {
-                Graphics.DrawFrame(boxRect, drawStyle.BorderColor, drawStyle.BorderWidth);
-            }
-
-            var socketStartingPoint = new Vector2N(
-                boxRect.TopRight.X - socketsSpacing,
-                boxRect.TopRight.Y + socketBorderSpacing
-            );
-
-            var list = entity.SocketInfo.SocketGroups.ToList();
-            SocketEmulation(list, socketStartingPoint, entity.Width == 1);
-            return new Vector2(fullWidth, fullHeight);
         }
         else
         {
-            var compassOffset = 0 + Settings.TextSize * ImGui.GetFontSize() * 2;
-            var textPos = position.Translate(-padding.X - compassOffset + 1, padding.Y + textToBorderSpacing);
-            Vector2N textSize;
+            socketHeight = 0;
+            socketWidth = 0;
+            socketPadding = 0;
+        }
 
-            switch (Settings.ScaleFontWhenCustom.Value)
+        var isDefaultFont = string.IsNullOrEmpty(Settings.FontOverride.Value);
+        var baseTextSize = isDefaultFont
+            ? Graphics.MeasureText(text)
+            : Graphics.MeasureText(text, Settings.FontOverride.Value);
+        float actualTextScale = isDefaultFont || Settings.ScaleFontWhenCustom
+            ? Settings.TextSize
+            : 1;
+        var textSize = baseTextSize * actualTextScale;
+
+        var socketAreaWidth = socketWidth + (enableSocketDisplay ? Math.Max(padding.X, socketPadding) + socketPadding : padding.X);
+        var fullWidth = textSize.X + padding.X + socketAreaWidth;
+        var textHeightWithPadding = textSize.Y + padding.Y * 2;
+        var fullHeight = Math.Max(textHeightWithPadding, socketHeight + socketPadding * 2);
+
+        var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth, fullHeight);
+        Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
+        if (drawStyle.BorderWidth > 0)
+        {
+            var frameRect = boxRect;
+            frameRect.Inflate(drawStyle.BorderWidth, drawStyle.BorderWidth);
+            Graphics.DrawFrame(frameRect, drawStyle.BorderColor, drawStyle.BorderWidth);
+        }
+
+        using (Graphics.SetTextScale(actualTextScale))
+        {
+            var textPos = position + new Vector2N(-socketAreaWidth, fullHeight / 2 - textSize.Y / 2);
+
+            float DrawLine(string line, Vector2N pos) =>
+                isDefaultFont 
+                    ? Graphics.DrawText(line, pos, drawStyle.TextColor, FontAlign.Right).Y 
+                    : Graphics.DrawText(line, pos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right).Y;
+
+            if (Settings.AlignItemTextToCenter)
             {
-                case true:
-                    using (Graphics.SetTextScale(Settings.TextSize))
-                    {
-                        if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                        {
-                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                        }
-                        else
-                        {
-                            textSize = Graphics.DrawText(
-                                text,
-                                textPos,
-                                drawStyle.TextColor,
-                                Settings.FontOverride.Value,
-                                FontAlign.Right
-                            );
-                        }
-                    }
-
-                    break;
-                case false:
-                    if (string.IsNullOrEmpty(Settings.FontOverride.Value))
-                    {
-                        using (Graphics.SetTextScale(Settings.TextSize))
-                        {
-                            textSize = Graphics.DrawText(text, textPos, drawStyle.TextColor, FontAlign.Right);
-                        }
-                    }
-                    else
-                    {
-                        textSize = Graphics.DrawText(
-                            text,
-                            textPos,
-                            drawStyle.TextColor,
-                            Settings.FontOverride.Value,
-                            FontAlign.Right
-                        );
-                    }
-
-                    break;
+                foreach (var line in text.ReplaceLineEndings("\n").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var lineSize = isDefaultFont 
+                        ? Graphics.MeasureText(line) 
+                        : Graphics.MeasureText(line, Settings.FontOverride.Value);
+                    textPos.Y += DrawLine(line, textPos + new Vector2N(-textSize.X / 2 + lineSize.X / 2, 0));
+                }
             }
+            else
+            {
+                DrawLine(text, textPos);
+            }
+        }
 
-            var fullHeight = textSize.Y + textToBorderSpacing * padding.Y + textToBorderSpacing +
-                             textToBorderSpacing * drawStyle.BorderWidth;
-
-            var fullWidth = textSize.X + textToBorderSpacing * padding.X * drawStyle.BorderWidth + compassOffset;
-            var boxRect = new RectangleF(position.X - fullWidth, position.Y, fullWidth - compassOffset, fullHeight);
-            Graphics.DrawBox(boxRect, drawStyle.BackgroundColor);
-            var rectUV = MathHepler.GetDirectionsUV(phi, distance);
-
-            var rectangleF = new RectangleF(
-                position.X - padding.X - compassOffset + 6,
-                position.Y + padding.Y,
-                singleRowText.Y,
-                singleRowText.Y
+        if (Settings.DrawCompass)
+        {
+            var compassUv = MathHepler.GetDirectionsUV(phi, distance);
+            var compassRect = new RectangleF(
+                position.X + drawStyle.BorderWidth + compassOffset / 2 - singleRowTextHeight / 2,
+                Settings.AlignCompassToCenter ? boxRect.Center.Y - singleRowTextHeight / 2 : boxRect.Top,
+                singleRowTextHeight,
+                singleRowTextHeight
             );
 
-            Graphics.DrawImage("directions.png", rectangleF, rectUV);
-
-            if (drawStyle.BorderWidth > 0)
-            {
-                Graphics.DrawFrame(boxRect, drawStyle.BorderColor, drawStyle.BorderWidth);
-            }
-
-            return new Vector2(fullWidth, fullHeight);
+            Graphics.DrawImage("directions.png", compassRect, compassUv);
         }
+
+        if (enableSocketDisplay)
+        {
+            var socketStartingPoint = new Vector2N(
+                boxRect.Right - socketWidth - socketPadding,
+                boxRect.Center.Y - socketHeight / 2f
+            );
+
+            SocketEmulation(entity.SocketInfo.SocketGroups, socketStartingPoint, entity.Width == 1);
+        }
+
+        return fullHeight + drawStyle.BorderWidth * 2;
     }
 
     private void UpdateStoredItems(bool forceUpdate) => UpdateStoredItems(forceUpdate, false);
@@ -491,21 +418,21 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             return;
         }
 
-        var ValidWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList() ?? [];
+        var validWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList() ?? [];
         var profilerTotal = doProfiler ? Stopwatch.StartNew() : null;
         var profilerModifyStored = doProfiler ? Stopwatch.StartNew() : null;
 
-        if (ValidWorldItems != null && GameController?.Files != null)
+        if (validWorldItems != null && GameController?.Files != null)
         {
-            var validWorldItemIds = new HashSet<long>(ValidWorldItems.Select(e => e.Address));
-            StoredCustomItems.RemoveWhere(item => !validWorldItemIds.Contains(item.LabelAddress));
-            var existingItemAddresses = new HashSet<long>(StoredCustomItems.Select(item => item.LabelAddress));
+            var validWorldItemIds = new HashSet<long>(validWorldItems.Select(e => e.Address));
+            _storedCustomItems.RemoveWhere(item => !validWorldItemIds.Contains(item.LabelAddress));
+            var existingItemAddresses = new HashSet<long>(_storedCustomItems.Select(item => item.LabelAddress));
 
-            foreach (var entity in ValidWorldItems)
+            foreach (var entity in validWorldItems)
                 if (!existingItemAddresses.Contains(entity.Address) &&
                     entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
                 {
-                    StoredCustomItems.Add(
+                    _storedCustomItems.Add(
                         new CustomItemData(
                             worldItem.ItemEntity,
                             entity.ItemOnGround,
@@ -521,7 +448,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         var profilerModifyLoopStored = doProfiler ? Stopwatch.StartNew() : null;
         var profilerIsInFilter = doProfiler ? Stopwatch.StartNew() : null;
 
-        foreach (var item in StoredCustomItems)
+        foreach (var item in _storedCustomItems)
         {
             if (item.WasDynamicallyUpdated)
             {
@@ -583,42 +510,11 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         int[] CalculateColumnWidths(IEnumerable<string> lines)
         {
-            int maxCol1 = 0, maxCol2 = 0, maxCol3 = 0, maxCol4 = 0;
-
-            foreach (var columns in lines
-                                    .Select(line => line.Split('|'))
-                                    .Where(columns => columns.Length == 4))
-            {
-                maxCol1 = Math.Max(
-                    maxCol1,
-                    columns[0]
-                        .Trim()
-                        .Length
-                );
-
-                maxCol2 = Math.Max(
-                    maxCol2,
-                    columns[1]
-                        .Trim()
-                        .Length
-                );
-
-                maxCol3 = Math.Max(
-                    maxCol3,
-                    columns[2]
-                        .Trim()
-                        .Length
-                );
-
-                maxCol4 = Math.Max(
-                    maxCol4,
-                    columns[3]
-                        .Trim()
-                        .Length
-                );
-            }
-
-            return [maxCol1, maxCol2, maxCol3, maxCol4];
+            return lines
+                .Select(line => line.Split('|'))
+                .Where(columns => columns.Length == 4)
+                .Select(columns => columns.Select(c => c.Trim().Length).ToList())
+                .Aggregate((int[]) [0, 0, 0, 0], (max, columns) => max.Zip(columns, Math.Max).ToArray());
         }
 
         string FormatLine(string line, IReadOnlyList<int> widths)
@@ -648,32 +544,29 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         SocketEmulation(socketGroups, startingPoint, oneHander);
     }
 
-    public void SocketEmulation(List<string> socketGroups, Vector2N startingPoint, bool oneHander)
+    private static readonly Dictionary<int, Direction?> NormalSocketDirections = new()
     {
-        var socketSize = Settings.EmuSocketSize;
-        var spacing = Settings.EmuSocketSpacing;
+        [0] = Direction.Right,
+        [1] = Direction.Down,
+        [2] = Direction.Left,
+        [3] = Direction.Down,
+        [4] = Direction.Right,
+    };
 
-        var socketLayout = new List<Vector2N>
-        {
-            new(0, 0),
-            new(0 + socketSize + spacing, 0),
-            new(socketSize + spacing, socketSize + spacing),
-            new(0, socketSize + spacing),
-            new(0, (socketSize + spacing) * 2),
-            new(socketSize + spacing, (socketSize + spacing) * 2)
-        };
+    private static readonly Dictionary<int, Direction?> OneHandedSocketDirections = new()
+    {
+        [0] = Direction.Down,
+        [1] = Direction.Down,
+    };
 
-        if (oneHander)
-        {
-            socketLayout = new List<Vector2N>
-            {
-                new(0, 0),
-                new(0, socketSize + spacing),
-                new(0, (socketSize + spacing) * 2)
-            };
-        }
+    public void SocketEmulation(IEnumerable<string> socketGroups, Vector2N startingPoint, bool oneHander)
+    {
+        var socketDisplaySettings = Settings.SocketDisplaySettings;
+        var socketPosDiff = socketDisplaySettings.SocketSize + socketDisplaySettings.SocketSpacing;
 
         var sockets = new List<Socket>();
+        Direction IndexToDirection(int index) => (oneHander ? OneHandedSocketDirections : NormalSocketDirections).GetValueOrDefault(index) ?? Direction.None;
+        var currentPosition = Vector2N.Zero;
         var socketIndex = 0;
 
         // Parse socket information and create sockets
@@ -681,31 +574,16 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             for (var charIndex = 0; charIndex < socketItem.Length; charIndex++)
             {
                 var charColor = socketItem[charIndex];
-                var currentPosition = socketLayout[socketIndex];
-
-                var direction = socketIndex switch
+                var trueDirection = IndexToDirection(socketIndex);
+                var drawDirection = charIndex == socketItem.Length - 1 ? Direction.None : trueDirection;
+                var socket = new Socket(GetSocketColor(charColor), currentPosition, drawDirection, socketDisplaySettings.LinkColor);
+                currentPosition += trueDirection switch
                 {
-                    0 => Direction.Right,
-                    1 => Direction.Down,
-                    2 => Direction.Left,
-                    3 => Direction.Down,
-                    4 => Direction.Right,
-                    5 => Direction.None,
-                    _ => Direction.None
+                    Direction.Right => Vector2N.UnitX * socketPosDiff,
+                    Direction.Down => Vector2N.UnitY * socketPosDiff,
+                    Direction.Left => -Vector2N.UnitX * socketPosDiff,
+                    _ => Vector2N.Zero,
                 };
-
-                if (oneHander)
-                {
-                    direction = Direction.Down;
-                }
-
-                var socket = new Socket(Color.White, currentPosition, direction, Settings.EmuLinkColor, oneHander);
-                SetSocketColor(charColor, socket);
-
-                if (charIndex == socketItem.Length - 1)
-                {
-                    socket.Direction = Direction.None;
-                }
 
                 sockets.Add(socket);
                 socketIndex += 1;
@@ -714,19 +592,19 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         SetSocketConnections(sockets);
 
         foreach (var socket in sockets)
-            socket.Draw(new Size2F(socketSize, socketSize), socket.Color, startingPoint, oneHander);
+            socket.Draw(new Vector2N(socketDisplaySettings.SocketSize, socketDisplaySettings.SocketSize), socketDisplaySettings.LinkWidth, startingPoint);
     }
 
-    private void SetSocketColor(char charColor, Socket socket)
+    private Color GetSocketColor(char charColor)
     {
-        socket.Color = charColor switch
+        return charColor switch
         {
-            'R' => (Color)Settings.EmuRedSocket,
-            'G' => (Color)Settings.EmuGreenSocket,
-            'B' => (Color)Settings.EmuBlueSocket,
-            'W' => (Color)Settings.EmuWhiteSocket,
-            'A' => (Color)Settings.EmuAbyssalSocket,
-            'O' => (Color)Settings.EmuResonatorSocket,
+            'R' => (Color)Settings.SocketDisplaySettings.RedSocketColor,
+            'G' => (Color)Settings.SocketDisplaySettings.GreenSocketColor,
+            'B' => (Color)Settings.SocketDisplaySettings.BlueSocketColor,
+            'W' => (Color)Settings.SocketDisplaySettings.WhiteSocketColor,
+            'A' => (Color)Settings.SocketDisplaySettings.AbyssalSocketColor,
+            'O' => (Color)Settings.SocketDisplaySettings.ResonatorSocketColor,
             _ => Color.Black
         };
     }
@@ -734,89 +612,38 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
     private static void SetSocketConnections(IReadOnlyList<Socket> sockets)
     {
         for (var i = 0; i < sockets.Count - 1; i++)
-            if (i < sockets.Count - 1)
-            {
-                sockets[i].Link = sockets[i + 1];
-            }
+        {
+            sockets[i].Link = sockets[i + 1];
+        }
     }
 
-    public class Socket(Color color, Vector2N position, Direction direction, Color linkColor, bool oneHander)
+    public record Socket(Color Color, Vector2N Position, Direction Direction, Color LinkColor)
     {
-        public Color Color { get; set; } = color;
-        public Color LinkColor { get; set; } = linkColor;
-        public Vector2N Position { get; set; } = position;
         public Socket Link { get; set; }
-        public Direction Direction { get; set; } = direction;
-        public bool OneHander { get; set; } = oneHander;
 
-        public void Draw(Size2F boxSize, Color color, Vector2N startDrawLocation, bool oneHander)
+        public void Draw(Vector2N boxSize, float linkWidth, Vector2N startDrawLocation)
         {
-            var newPosition = new Vector2N(startDrawLocation.X + Position.X, startDrawLocation.Y + Position.Y);
+            var drawPosition = startDrawLocation + Position;
 
-            if (oneHander)
-            {
-                newPosition = new Vector2N(startDrawLocation.X, startDrawLocation.Y + Position.Y);
-            }
-
-            DrawLineToNextSocketIfPresent(boxSize, startDrawLocation, newPosition);
-            DrawBoxAtPosition(boxSize, color, newPosition);
+            DrawLineToNextSocketIfPresent(boxSize, startDrawLocation, drawPosition, linkWidth);
+            DrawBoxAtPosition(boxSize, drawPosition);
         }
 
-        private void DrawBoxAtPosition(Size2F boxSize, Color color, Vector2N newPosition)
+        private void DrawBoxAtPosition(Vector2N boxSize, Vector2N drawPosition)
         {
-            // Draw box at current position
-            DrawBox(new RectangleF(newPosition.X, newPosition.Y, boxSize.Width, boxSize.Height), color);
+            DrawBox(new RectangleF(drawPosition.X, drawPosition.Y, boxSize.X, boxSize.Y), Color);
         }
 
-        private void DrawLineToNextSocketIfPresent(Size2F boxSize, Vector2N startDrawLocation, Vector2N newPosition)
+        private void DrawLineToNextSocketIfPresent(Vector2N boxSize, Vector2N startDrawLocation, Vector2N drawPosition, float linkWidth)
         {
             if (Link == null)
             {
                 return;
             }
 
-            var linkPosition = new Vector2N(
-                startDrawLocation.X + Link.Position.X,
-                startDrawLocation.Y + Link.Position.Y
-            );
-
-            switch (Direction)
+            if (Direction != Direction.None)
             {
-                case Direction.Right:
-                    DrawLine(
-                        new Vector2N(
-                            startDrawLocation.X + Position.X + boxSize.Width / 2,
-                            newPosition.Y + boxSize.Height / 2
-                        ),
-                        new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y + boxSize.Width / 2),
-                        4
-                    );
-
-                    break;
-                case Direction.Down:
-                    DrawLine(
-                        new Vector2N(
-                            startDrawLocation.X + Position.X + boxSize.Width / 2,
-                            startDrawLocation.Y + Position.Y + boxSize.Height / 2
-                        ),
-                        new Vector2N(linkPosition.X + boxSize.Width / 2, linkPosition.Y + boxSize.Height / 2),
-                        4
-                    );
-
-                    break;
-                case Direction.Left:
-                    DrawLine(
-                        new Vector2N(
-                            startDrawLocation.X + Position.X + boxSize.Width / 2,
-                            newPosition.Y + boxSize.Width / 2
-                        ),
-                        new Vector2N(linkPosition.X + boxSize.Height / 2, linkPosition.Y + boxSize.Height / 2),
-                        4
-                    );
-
-                    break;
-                case Direction.None:
-                    break;
+                DrawLine(drawPosition + boxSize / 2, startDrawLocation + Link.Position + boxSize / 2, linkWidth);
             }
         }
 
@@ -826,7 +653,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             _graphics.DrawBox(rect, color);
         }
 
-        public void DrawLine(Vector2N p1, Vector2N p2, int borderWidth)
+        public void DrawLine(Vector2N p1, Vector2N p2, float borderWidth)
         {
             // Your own DrawLine implementation
             _graphics.DrawLine(p1, p2, borderWidth, LinkColor);
@@ -851,13 +678,13 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
         if (ImGui.Button("Clear StoredCustomItems and ReRun (PROFILER)"))
         {
-            StoredCustomItems.Clear();
+            _storedCustomItems.Clear();
             UpdateStoredItems(true, true);
         }
 
         if (ImGui.Button("Recheck all StoredCustomItems for IsWanted (PROFILER)"))
         {
-            foreach (var item in StoredCustomItems)
+            foreach (var item in _storedCustomItems)
             {
                 item.IsWanted = null;
                 item.WasDynamicallyUpdated = false;
@@ -1000,7 +827,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             LogError($"An error occurred while loading rule files: {e.Message}");
         }
 
-        StoredCustomItems.Clear();
+        _storedCustomItems.Clear();
         UpdateStoredItems(true);
     }
 
