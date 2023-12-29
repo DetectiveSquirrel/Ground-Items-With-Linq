@@ -4,62 +4,78 @@ using ExileCore.Shared.Nodes;
 using Newtonsoft.Json;
 using SharpDX;
 using System.Collections.Generic;
+using GameOffsets.Native;
 
 namespace Ground_Items_With_Linq;
 
 public class Ground_Items_With_LinqSettings : ISettings
 {
     //Mandatory setting to allow enabling/disabling your plugin
-    public ToggleNode Enable { get; set; } = new ToggleNode(false);
+    public ToggleNode Enable { get; set; } = new(false);
 
-    [Menu("Debug", "Display debug strings")]
-    public ToggleNode Debug { get; set; } = new ToggleNode(false);
+    [Menu(null, "Display debug strings")]
+    public ToggleNode Debug { get; set; } = new(false);
 
-    public List<GroundRule> GroundRules { get; set; } = new List<GroundRule>();
-    public RangeNode<int> UpdateTimer { get; set; } = new RangeNode<int>(500, 0, 5000);
-    public RangeNode<float> TextSize { get; set; } = new RangeNode<float>(1f, 1f, 20f);
+    public List<GroundRule> GroundRules { get; set; } = [];
+    public RangeNode<int> UpdateTimer { get; set; } = new(500, 0, 5000);
+    public RangeNode<float> TextSize { get; set; } = new(1f, 1f, 20f);
 
-    public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new UniqueIdentificationSettings();
-    public ToggleNode EnableTextDrawing { get; set; } = new ToggleNode(true);
-    public ToggleNode IgnoreFullscreenPanels { get; set; } = new ToggleNode(false);
-    public ToggleNode IgnoreRightPanels { get; set; } = new ToggleNode(false);
-    public TextNode FontOverride { get; set; } = new TextNode("");
-    public ToggleNode ScaleFontWhenCustom { get; set; } = new ToggleNode(false);
-    public RangeNode<int> TextPadding { get; set; } = new RangeNode<int>(5, 1, 60);
-    public RangeNode<int> LabelShift { get; set; } = new RangeNode<int>(0, -600, 600);
-    public ToggleNode OrderByDistance { get; set; } = new ToggleNode(true);
+    public UniqueIdentificationSettings UniqueIdentificationSettings { get; set; } = new();
+    public ToggleNode EnableTextDrawing { get; set; } = new(true);
+    public ToggleNode IgnoreFullscreenPanels { get; set; } = new(false);
+    public ToggleNode IgnoreRightPanels { get; set; } = new(false);
+    public TextNode FontOverride { get; set; } = new("");
+    public ToggleNode ScaleFontWhenCustom { get; set; } = new(false);
+    public RangeNode<int> ItemSpacing { get; set; } = new(5, 1, 60);
+    public ToggleNode AlignItemTextToCenter { get; set; } = new(true);
+    public ToggleNode DrawCompass { get; set; } = new(true);
+    public ToggleNode AlignCompassToCenter { get; set; } = new(true);
 
-    public ToggleNode EnableMapDrawing { get; set; } = new ToggleNode(true);
-    public ColorNode MapLineColor { get; set; } = new ColorNode(new Color(214, 0, 255, 255));
-    public RangeNode<float> MapLineThickness { get; set; } = new RangeNode<float>(2.317f, 1f, 10f);
+    [JsonProperty("textPadding2")]
+    public RangeNode<Vector2i> TextPadding { get; set; } = new(new Vector2i(5, 2), Vector2i.Zero, Vector2i.One * 60);
 
-    //Socket + Links Emulation Params
-    public RangeNode<int> EmuSocketSize { get; set; } = new RangeNode<int>(6, 1, 60);
-    public RangeNode<int> EmuSocketSpacing { get; set; } = new RangeNode<int>(4, 4, 60);
-    public ColorNode EmuRedSocket { get; set; } = new ColorNode(new Color(201, 13, 50, 255));
-    public ColorNode EmuGreenSocket { get; set; } = new ColorNode(new Color(158, 202, 13, 255));
-    public ColorNode EmuBlueSocket { get; set; } = new ColorNode(new Color(88, 130, 254, 255));
-    public ColorNode EmuWhiteSocket { get; set; } = new ColorNode(Color.White);
-    public ColorNode EmuAbyssalSocket { get; set; } = new ColorNode(new Color(59, 59, 59, 255));
-    public ColorNode EmuResonatorSocket { get; set; } = new ColorNode(new Color(249, 149, 13, 255));
-    public ColorNode EmuLinkColor { get; set; } = new ColorNode(new Color(195, 195, 195, 255));
+    public RangeNode<int> BorderWidth { get; set; } = new(1, 1, 20);
+    public RangeNode<int> LabelShift { get; set; } = new(0, -600, 600);
+    public ToggleNode OrderByDistance { get; set; } = new(true);
 
+    public ToggleNode EnableMapDrawing { get; set; } = new(true);
+    public ColorNode MapLineColor { get; set; } = new(new Color(214, 0, 255, 255));
+    public RangeNode<float> MapLineThickness { get; set; } = new(2.317f, 1f, 10f);
+
+    public SocketDisplaySettings SocketDisplaySettings { get; set; } = new();
 
     [JsonIgnore]
-    public ButtonNode ReloadFilters { get; set; } = new ButtonNode();
+    public ButtonNode ReloadFilters { get; set; } = new();
 
-    [Menu("Use a Custom \"\\config\\custom_folder\" folder ")]
-    public TextNode CustomConfigDir { get; set; } = new TextNode();
+    [Menu(@"Use a Custom ""\config\custom_folder"" folder")]
+    public TextNode CustomConfigDir { get; set; } = new();
+}
+
+[Submenu]
+public class SocketDisplaySettings
+{
+    public ToggleNode ShowSockets { get; set; } = new(true);
+    public RangeNode<int> SocketSize { get; set; } = new(6, 1, 60);
+    public RangeNode<int> SocketSpacing { get; set; } = new(4, 4, 60);
+    public RangeNode<int> SocketPadding { get; set; } = new(5, 0, 60);
+    public ColorNode RedSocketColor { get; set; } = new Color(201, 13, 50, 255);
+    public ColorNode GreenSocketColor { get; set; } = new Color(158, 202, 13, 255);
+    public ColorNode BlueSocketColor { get; set; } = new Color(88, 130, 254, 255);
+    public ColorNode WhiteSocketColor { get; set; } = Color.White;
+    public ColorNode AbyssalSocketColor { get; set; } = new Color(59, 59, 59, 255);
+    public ColorNode ResonatorSocketColor { get; set; } = new Color(249, 149, 13, 255);
+    public ColorNode LinkColor { get; set; } = new Color(195, 195, 195, 255);
+    public RangeNode<int> LinkWidth { get; set; } = new(4, 2, 20);
 }
 
 [Submenu]
 public class UniqueIdentificationSettings
 {
     [JsonIgnore]
-    public ButtonNode RebuildUniqueItemArtMappingBackup { get; set; } = new ButtonNode();
+    public ButtonNode RebuildUniqueItemArtMappingBackup { get; set; } = new();
 
     [Menu(null, "Use if you want to ignore what's in game memory and rely only on your custom/builtin file")]
-    public ToggleNode IgnoreGameUniqueArtMapping { get; set; } = new ToggleNode(false);
+    public ToggleNode IgnoreGameUniqueArtMapping { get; set; } = new(false);
 }
 
 public class GroundRule(string name, string location, bool enabled)
