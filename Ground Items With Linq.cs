@@ -418,25 +418,27 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             return;
         }
 
-        var validWorldItems = GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.ToList() ?? [];
+        var validWorldItems = Settings.UseFastLabelList
+            ? GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabelElement.VisibleGroundItemLabels?.Select(x => new { x.Entity, x.Label }).ToList() ?? []
+            : GameController?.Game?.IngameState?.IngameUi?.ItemsOnGroundLabels?.Select(x => new { Entity = x.ItemOnGround, x.Label }).ToList() ?? [];
         var profilerTotal = doProfiler ? Stopwatch.StartNew() : null;
         var profilerModifyStored = doProfiler ? Stopwatch.StartNew() : null;
 
         if (validWorldItems != null && GameController?.Files != null)
         {
-            var validWorldItemIds = new HashSet<long>(validWorldItems.Select(e => e.Address));
+            var validWorldItemIds = new HashSet<long>(validWorldItems.Select(e => e.Label.Address));
             _storedCustomItems.RemoveWhere(item => !validWorldItemIds.Contains(item.LabelAddress));
             var existingItemAddresses = new HashSet<long>(_storedCustomItems.Select(item => item.LabelAddress));
 
-            foreach (var entity in validWorldItems)
-                if (!existingItemAddresses.Contains(entity.Address) &&
-                    entity.ItemOnGround.TryGetComponent<WorldItem>(out var worldItem))
+            foreach (var itemInfo in validWorldItems)
+                if (!existingItemAddresses.Contains(itemInfo.Label.Address) &&
+                    itemInfo.Entity.TryGetComponent<WorldItem>(out var worldItem))
                 {
                     _storedCustomItems.Add(
                         new CustomItemData(
                             worldItem.ItemEntity,
-                            entity.ItemOnGround,
-                            entity,
+                            itemInfo.Entity,
+                            itemInfo.Label,
                             GameController,
                             UniqueArtMapping
                         )
@@ -458,49 +460,45 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
             item.UpdateDynamicCustomData();
 
-            if (doProfiler)
-            {
-                profilerIsInFilter.Start();
-            }
-
+            profilerIsInFilter?.Start();
             item.IsWanted ??= ItemInFilter(item);
-
-            if (doProfiler)
-            {
-                profilerIsInFilter.Stop();
-            }
+            profilerIsInFilter?.Stop();
         }
 
         if (doProfiler)
         {
-            profilerModifyLoopStored?.Stop();
-            profilerTotal?.Stop();
-
-            var logLines = new List<string>
-            {
-                // Add headers
-                "Profiler | Ticks | Nanoseconds (ns) | Milliseconds (ms)",
-                new('-', 60) // Temporary separator length
-            };
-
-            // Add profiler results
-            AddProfilerResult("Modify Stored", profilerModifyStored, logLines);
-            AddProfilerResult("Modify Loop Stored", profilerModifyLoopStored, logLines);
-            AddProfilerResult("Check Is Wanted", profilerIsInFilter, logLines);
-            AddProfilerResult("Total", profilerTotal, logLines);
-
-            // Calculate the maximum width for each column
-            var columnWidths = CalculateColumnWidths(logLines);
-
-            // Adjust and print each log line
-            foreach (var line in logLines)
-                DebugWindow.LogMsg(FormatLine(line, columnWidths), 10);
+            UpdateProfilerResults(profilerModifyLoopStored, profilerTotal, profilerModifyStored, profilerIsInFilter);
         }
 
         _timer.Restart();
-        return;
+    }
 
-        void AddProfilerResult(string profilerName, Stopwatch profiler, List<string> logLines)
+    private static void UpdateProfilerResults(Stopwatch profilerModifyLoopStored, Stopwatch profilerTotal, Stopwatch profilerModifyStored, Stopwatch profilerIsInFilter)
+    {
+        profilerModifyLoopStored?.Stop();
+        profilerTotal?.Stop();
+
+        var logLines = new List<string>
+        {
+            // Add headers
+            "Profiler | Ticks | Nanoseconds (ns) | Milliseconds (ms)",
+            new('-', 60) // Temporary separator length
+        };
+
+        // Add profiler results
+        AddProfilerResult("Modify Stored", profilerModifyStored);
+        AddProfilerResult("Modify Loop Stored", profilerModifyLoopStored);
+        AddProfilerResult("Check Is Wanted", profilerIsInFilter);
+        AddProfilerResult("Total", profilerTotal);
+
+        // Calculate the maximum width for each column
+        var columnWidths = CalculateColumnWidths(logLines);
+
+        // Adjust and print each log line
+        foreach (var line in logLines)
+            DebugWindow.LogMsg(FormatLine(line, columnWidths), 10);
+
+        void AddProfilerResult(string profilerName, Stopwatch profiler)
         {
             var ticks = profiler.ElapsedTicks;
             var nanoseconds = (double)ticks / Stopwatch.Frequency * 1_000_000_000;
