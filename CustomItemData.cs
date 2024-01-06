@@ -8,6 +8,7 @@ using ItemFilterLibrary;
 using SharpDX;
 using System.Collections.Generic;
 using System.Linq;
+using ExileCore.PoEMemory;
 using Vector2 = System.Numerics.Vector2;
 
 namespace Ground_Items_With_Linq;
@@ -15,15 +16,15 @@ namespace Ground_Items_With_Linq;
 public class CustomItemData(
     Entity queriedItem,
     Entity worldEntity,
-    LabelOnGround queriedItemLabel,
+    Element label,
     GameController gc,
-    IReadOnlyDictionary<string, List<string>> uniqueNameCandidates) : ItemData(queriedItem, gc)
+    IReadOnlyDictionary<string, List<string>> uniqueNameCandidates) : ItemData(queriedItem, worldEntity, gc)
 {
-    public ColorBGRA TextColor { get; set; } = queriedItemLabel.Label.TextColor;
-    public ColorBGRA BorderColor { get; set; } = queriedItemLabel.Label.BordColor;
-    public ColorBGRA BackgroundColor { get; set; } = queriedItemLabel.Label.BgColor;
-    public string LabelText { get; set; } = queriedItemLabel.Label.Text;
-    public long LabelAddress { get; set; } = queriedItemLabel.Address;
+    public ColorBGRA TextColor { get; set; } = label.TextColor;
+    public ColorBGRA BorderColor { get; set; } = label.BordColor;
+    public ColorBGRA BackgroundColor { get; set; } = label.BgColor;
+    public string LabelText { get; set; } = label.Text;
+    public long LabelAddress { get; set; } = label.Address;
     public bool? IsWanted { get; set; }
     public Vector2 Location { get; set; } = worldEntity.GridPosNum;
 

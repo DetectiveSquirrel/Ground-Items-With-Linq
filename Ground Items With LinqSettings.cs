@@ -31,6 +31,9 @@ public class Ground_Items_With_LinqSettings : ISettings
     public ToggleNode DrawCompass { get; set; } = new(true);
     public ToggleNode AlignCompassToCenter { get; set; } = new(true);
 
+    [Menu(null, "Use a much more performant label list, only containing labels which are actually visible (items hidden by the filter or by pressing Z will not show up)")]
+    public ToggleNode UseFastLabelList { get; set; } = new(false);
+
     [JsonProperty("textPadding2")]
     public RangeNode<Vector2i> TextPadding { get; set; } = new(new Vector2i(5, 2), Vector2i.Zero, Vector2i.One * 60);
 
