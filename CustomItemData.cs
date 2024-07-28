@@ -13,29 +13,21 @@ using Vector2 = System.Numerics.Vector2;
 
 namespace Ground_Items_With_Linq;
 
-public class CustomItemData(
-    Entity queriedItem,
-    Entity worldEntity,
-    Element label,
-    GameController gc,
-    IReadOnlyDictionary<string, List<string>> uniqueNameCandidates) : ItemData(queriedItem, worldEntity, gc)
+public class CustomItemData(Entity queriedItem, Entity worldEntity, Element label, GameController gc, IReadOnlyDictionary<string, List<string>> uniqueNameCandidates) : ItemData(queriedItem, worldEntity, gc)
 {
     public ColorBGRA TextColor { get; set; } = label.TextColor;
     public ColorBGRA BorderColor { get; set; } = label.BordColor;
     public ColorBGRA BackgroundColor { get; set; } = label.BgColor;
+    public float LabelScale { get; set; } = label.Scale;
+    public int LabelTextSize { get; set; } = label.TextSize;
     public string LabelText { get; set; } = label.Text;
     public long LabelAddress { get; set; } = label.Address;
     public bool? IsWanted { get; set; }
     public Vector2 Location { get; set; } = worldEntity.GridPosNum;
 
-    public List<string> UniqueNameCandidates { get; set; }
-        = queriedItem.TryGetComponent<Mods>(out var mods) && !mods.Identified && mods.ItemRarity == ItemRarity.Unique
-            ? (uniqueNameCandidates.GetValueOrDefault(
-                  queriedItem.GetComponent<RenderItem>()
-                             ?.ResourcePath
-              ) ?? Enumerable.Empty<string>())
-              .Where(x => !x.StartsWith("Replica "))
-              .ToList() : [];
+    public List<string> UniqueNameCandidates { get; set; } = queriedItem.TryGetComponent<Mods>(out var mods) && !mods.Identified && mods.ItemRarity == ItemRarity.Unique
+        ? (uniqueNameCandidates.GetValueOrDefault(queriedItem.GetComponent<RenderItem>()?.ResourcePath) ?? Enumerable.Empty<string>()).Where(x => !x.StartsWith("Replica ")).ToList()
+        : [];
 
     public float DistanceCustom { get; set; }
 

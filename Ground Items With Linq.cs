@@ -228,6 +228,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
 
             var defaultAlertDrawStyle = new AlertDrawStyle(
                 "<SOMETHINGS WRONG>",
+                14,
+                1,
                 Color.White,
                 Settings.BorderWidth,
                 Color.White,
@@ -244,6 +246,8 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                     var alertDrawStyle = defaultAlertDrawStyle with
                     {
                         Text = text,
+                        TextSize = entity.LabelTextSize,
+                        LabelScale = entity.LabelScale,
                         TextColor = entity.TextColor,
                         BackgroundColor = entity.BackgroundColor,
                         BorderColor = entity.BorderColor
@@ -338,7 +342,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
         var isDefaultFont = string.IsNullOrEmpty(Settings.FontOverride.Value);
         var baseTextSize = isDefaultFont
             ? Graphics.MeasureText(text)
-            : Graphics.MeasureText(text, Settings.FontOverride.Value);
+            : Graphics.MeasureText(text, $"{Settings.FontOverride.Value}:{(int)Math.Round(drawStyle.TextSize * drawStyle.LabelScale)}");
         float actualTextScale = isDefaultFont || Settings.ScaleFontWhenCustom
             ? Settings.TextSize
             : 1;
@@ -365,7 +369,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
             float DrawLine(string line, Vector2N pos) =>
                 isDefaultFont 
                     ? Graphics.DrawText(line, pos, drawStyle.TextColor, FontAlign.Right).Y 
-                    : Graphics.DrawText(line, pos, drawStyle.TextColor, Settings.FontOverride.Value, FontAlign.Right).Y;
+                    : Graphics.DrawText(line, pos, drawStyle.TextColor, $"{Settings.FontOverride.Value}:{(int)Math.Round(drawStyle.TextSize * drawStyle.LabelScale)}", FontAlign.Right).Y;
 
             if (Settings.AlignItemTextToCenter)
             {
@@ -373,7 +377,7 @@ public class Ground_Items_With_Linq : BaseSettingsPlugin<Ground_Items_With_LinqS
                 {
                     var lineSize = isDefaultFont 
                         ? Graphics.MeasureText(line) 
-                        : Graphics.MeasureText(line, Settings.FontOverride.Value);
+                        : Graphics.MeasureText(line, $"{Settings.FontOverride.Value}:{(int)Math.Round(drawStyle.TextSize * drawStyle.LabelScale)}");
                     textPos.Y += DrawLine(line, textPos + new Vector2N(-textSize.X / 2 + lineSize.X / 2, 0));
                 }
             }
