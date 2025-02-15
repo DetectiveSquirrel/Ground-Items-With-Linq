@@ -1,5 +1,5 @@
 ﻿using Color = SharpDX.Color;
 
-namespace Ground_Items_With_Linq;
+namespace Ground_Items_With_Linq.Drawing;
 
 public record AlertDrawStyle(string Text, Color TextColor, int BorderWidth, Color BorderColor, Color BackgroundColor);

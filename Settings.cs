@@ -8,9 +8,8 @@ using GameOffsets.Native;
 
 namespace Ground_Items_With_Linq;
 
-public class Ground_Items_With_LinqSettings : ISettings
+public class GroundItemsWithLinqSettings : ISettings
 {
-    //Mandatory setting to allow enabling/disabling your plugin
     public ToggleNode Enable { get; set; } = new(false);
 
     [Menu(null, "Display debug strings")]
@@ -47,10 +46,7 @@ public class Ground_Items_With_LinqSettings : ISettings
 
     public SocketDisplaySettings SocketDisplaySettings { get; set; } = new();
 
-    [JsonIgnore]
-    public ButtonNode ReloadFilters { get; set; } = new();
-
-    [Menu(@"Use a Custom ""\config\custom_folder"" folder")]
+    [Menu(@"Use a Custom '\config\custom_folder' folder")]
     public TextNode CustomConfigDir { get; set; } = new();
 }
 
