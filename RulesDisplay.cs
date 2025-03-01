@@ -15,6 +15,24 @@ public class RulesDisplay
 {
     public static void DrawSettings()
     {
+
+        ImGui.Separator();
+        if (ImGui.Button("Clear StoredCustomItems and ReRun (PROFILER)"))
+        {
+            Main.StoredCustomItems.Clear();
+            Main.UpdateStoredItems(true, true);
+        }
+
+        if (ImGui.Button("Recheck all StoredCustomItems for IsWanted (PROFILER)"))
+        {
+            foreach (var item in Main.StoredCustomItems)
+            {
+                item.IsWanted = null;
+                item.WasDynamicallyUpdated = false;
+            }
+
+            Main.UpdateStoredItems(true, true);
+        }
         ImGui.Separator();
         if (ImGui.Button("Open Filter Folder"))
         {
@@ -44,10 +62,6 @@ public class RulesDisplay
             ImGui.TableSetupColumn("Toggle", ImGuiTableColumnFlags.WidthFixed, 50);
             ImGui.TableSetupColumn("File", ImGuiTableColumnFlags.None);
             ImGui.TableHeadersRow();
-
-            var reorderPending = false;
-            var pendingSrcIndex = -1;
-            var pendingNewIndex = -1;
 
             var rules = Main.Settings.GroundRules;
             for (var i = 0; i < rules.Count; i++)

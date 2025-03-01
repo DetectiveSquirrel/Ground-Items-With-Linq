@@ -5,32 +5,22 @@ using System.Linq;
 using System.Reflection;
 using ExileCore;
 using Newtonsoft.Json;
+using static Ground_Items_With_Linq.GroundItemsWithLinq;
 
 namespace Ground_Items_With_Linq;
 
-public class UniqueArtManager
+public class UniqueArtManager()
 {
-    private readonly bool _debug;
-    private readonly string _directoryFullName;
-    private readonly GameController _gameController;
-
-    public UniqueArtManager(GameController gameController, string directoryFullName, bool debug)
+    public static Dictionary<string, List<string>> GetGameFileUniqueArtMapping()
     {
-        _gameController = gameController;
-        _directoryFullName = directoryFullName;
-        _debug = debug;
-    }
+        if (Main.GameController.Files.UniqueItemDescriptions.EntriesList.Count == 0)
+            Main.GameController.Files.LoadFiles();
 
-    public Dictionary<string, List<string>> GetGameFileUniqueArtMapping()
-    {
-        if (_gameController.Files.UniqueItemDescriptions.EntriesList.Count == 0)
-            _gameController.Files.LoadFiles();
-
-        return _gameController
+        return Main.GameController
             .Files.ItemVisualIdentities.EntriesList
             .Where(x => x.ArtPath != null)
             .GroupJoin(
-                _gameController.Files.UniqueItemDescriptions.EntriesList
+                Main.GameController.Files.UniqueItemDescriptions.EntriesList
                     .Where(x => x.ItemVisualIdentity != null),
                 x => x,
                 x => x.ItemVisualIdentity,
@@ -47,16 +37,16 @@ public class UniqueArtManager
             .ToDictionary(x => x.Key, x => x.Names);
     }
 
-    public Dictionary<string, List<string>> LoadUniqueArtMapping(bool ignoreGameMapping)
+    public static Dictionary<string, List<string>> LoadUniqueArtMapping(bool ignoreGameMapping)
     {
         Dictionary<string, List<string>> mapping = null;
 
         if (!ignoreGameMapping &&
-            _gameController.Files.UniqueItemDescriptions.EntriesList.Count != 0 &&
-            _gameController.Files.ItemVisualIdentities.EntriesList.Count != 0)
+            Main.GameController.Files.UniqueItemDescriptions.EntriesList.Count != 0 &&
+            Main.GameController.Files.ItemVisualIdentities.EntriesList.Count != 0)
             mapping = GetGameFileUniqueArtMapping();
 
-        var customFilePath = Path.Join(_directoryFullName, GroundItemsWithLinq.CustomUniqueArtMappingPath);
+        var customFilePath = Path.Join(Main.DirectoryFullName, CustomUniqueArtMappingPath);
 
         if (File.Exists(customFilePath))
             try
@@ -67,7 +57,7 @@ public class UniqueArtManager
             }
             catch (Exception ex)
             {
-                LogError($"Unable to load custom art mapping: {ex}");
+                Main.LogError($"Unable to load custom art mapping: {ex}");
             }
 
         mapping ??= GetEmbeddedUniqueArtMapping();
@@ -75,17 +65,17 @@ public class UniqueArtManager
         return mapping;
     }
 
-    private Dictionary<string, List<string>> GetEmbeddedUniqueArtMapping()
+    private static Dictionary<string, List<string>> GetEmbeddedUniqueArtMapping()
     {
         try
         {
             using var stream = Assembly
                 .GetExecutingAssembly()
-                .GetManifestResourceStream(GroundItemsWithLinq.DefaultUniqueArtMappingPath);
+                .GetManifestResourceStream(DefaultUniqueArtMappingPath);
 
             if (stream == null)
             {
-                if (_debug) LogMessage($"Embedded stream {GroundItemsWithLinq.DefaultUniqueArtMappingPath} is missing");
+                if (Main.Settings.Debug) LogMessage($"Embedded stream {DefaultUniqueArtMappingPath} is missing");
                 return null;
             }
 
@@ -100,12 +90,12 @@ public class UniqueArtManager
         }
     }
 
-    private void LogError(string message)
+    private static void LogError(string message)
     {
         DebugWindow.LogError($"[UniqueArtManager] {message}");
     }
 
-    private void LogMessage(string message)
+    private static void LogMessage(string message)
     {
         DebugWindow.LogMsg($"[UniqueArtManager] {message}");
     }

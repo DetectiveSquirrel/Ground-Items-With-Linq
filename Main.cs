@@ -17,8 +17,6 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
     public static GroundItemsWithLinq Main;
     public readonly HashSet<CustomItemData> StoredCustomItems = [];
     public readonly Stopwatch Timer = Stopwatch.StartNew();
-    private ItemStateManager _itemStateManager;
-    private UniqueArtManager _uniqueArtManager;
 
     public List<ItemFilter> ItemFilters;
     public Element LargeMap;
@@ -32,13 +30,11 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
     public override bool Initialise()
     {
         Main = this;
-        _uniqueArtManager = new UniqueArtManager(GameController, DirectoryFullName, Settings.Debug);
-        _itemStateManager = new ItemStateManager(StoredCustomItems, GameController);
         GameController.UnderPanel.WantUse(() => Settings.Enable);
 
         Settings.UniqueIdentificationSettings.RebuildUniqueItemArtMappingBackup.OnPressed += () =>
         {
-            var mapping = _uniqueArtManager.GetGameFileUniqueArtMapping();
+            var mapping = UniqueArtManager.GetGameFileUniqueArtMapping();
 
             if (mapping != null)
                 File.WriteAllText(
@@ -49,7 +45,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
 
         Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping.OnValueChanged += (_, _) =>
         {
-            UniqueArtMapping = _uniqueArtManager.LoadUniqueArtMapping(
+            UniqueArtMapping = UniqueArtManager.LoadUniqueArtMapping(
                 Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping
             );
         };
@@ -65,7 +61,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
 
     public override void AreaChange(AreaInstance area)
     {
-        UniqueArtMapping = _uniqueArtManager.LoadUniqueArtMapping(
+        UniqueArtMapping = UniqueArtManager.LoadUniqueArtMapping(
             Settings.UniqueIdentificationSettings.IgnoreGameUniqueArtMapping
         );
         StoredCustomItems.Clear();
@@ -73,7 +69,6 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
 
     public override Job Tick()
     {
-        LogMessage($"Unique Art Mappings: {UniqueArtMapping.Count}");
         LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
         UpdateStoredItems(false);
         return null;
@@ -115,7 +110,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
         var profilerTotal = doProfiler ? Stopwatch.StartNew() : null;
         var profilerModifyStored = doProfiler ? Stopwatch.StartNew() : null;
 
-        _itemStateManager.RefreshStoredItems(Settings.UseFastLabelList);
+        ItemStateManager.RefreshStoredItems(Settings.UseFastLabelList);
 
         profilerModifyStored?.Stop();
         var profilerModifyLoopStored = doProfiler ? Stopwatch.StartNew() : null;
