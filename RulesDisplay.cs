@@ -15,7 +15,22 @@ public class RulesDisplay
 {
     public static void DrawSettings()
     {
-        if (ImGui.Button("Reload Rule Files"))
+        ImGui.Separator();
+        if (ImGui.Button("Open Filter Folder"))
+        {
+            var configDirectory = Main.ConfigDirectory;
+            var customConfigDirectory = !string.IsNullOrEmpty(Main.Settings.CustomConfigDir)
+                ? Path.Combine(Path.GetDirectoryName(Main.ConfigDirectory)!, Main.Settings.CustomConfigDir)
+                : null;
+
+            var directoryToOpen = Directory.Exists(customConfigDirectory)
+                ? customConfigDirectory
+                : configDirectory;
+
+            Process.Start("explorer.exe", directoryToOpen);
+        }
+
+        if (ImGui.Button("Reload Rules"))
             LoadAndApplyRules();
 
         ImGui.Separator();
@@ -153,14 +168,6 @@ public class RulesDisplay
             }
         }
     }
-
-
-    private static void SwapRules(int indexA, int indexB)
-    {
-        var rules = Main.Settings.GroundRules;
-        (rules[indexA], rules[indexB]) = (rules[indexB], rules[indexA]);
-    }
-
     private static string GetPickitConfigFileDirectory()
     {
         var pickitConfigFileDirectory = Main.ConfigDirectory;

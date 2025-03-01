@@ -11,16 +11,13 @@ public class ItemStateManager
 {
     private readonly GameController _gameController;
     private readonly HashSet<CustomItemData> _storedItems;
-    private readonly Dictionary<string, List<string>> _uniqueArtMapping;
 
     public ItemStateManager(
         HashSet<CustomItemData> storedItems,
-        GameController gameController,
-        Dictionary<string, List<string>> uniqueArtMapping)
+        GameController gameController)
     {
         _storedItems = storedItems;
         _gameController = gameController;
-        _uniqueArtMapping = uniqueArtMapping;
     }
 
     public void RefreshStoredItems(bool useFastLabelList)
@@ -71,7 +68,7 @@ public class ItemStateManager
                 itemInfo.Entity,
                 itemInfo.Label,
                 _gameController,
-                _uniqueArtMapping
+                GroundItemsWithLinq.Main.UniqueArtMapping
             ));
         }
     }

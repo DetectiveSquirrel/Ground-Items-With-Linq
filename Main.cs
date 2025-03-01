@@ -33,7 +33,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
     {
         Main = this;
         _uniqueArtManager = new UniqueArtManager(GameController, DirectoryFullName, Settings.Debug);
-        _itemStateManager = new ItemStateManager(StoredCustomItems, GameController, UniqueArtMapping);
+        _itemStateManager = new ItemStateManager(StoredCustomItems, GameController);
         GameController.UnderPanel.WantUse(() => Settings.Enable);
 
         Settings.UniqueIdentificationSettings.RebuildUniqueItemArtMappingBackup.OnPressed += () =>
@@ -73,6 +73,7 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
 
     public override Job Tick()
     {
+        LogMessage($"Unique Art Mappings: {UniqueArtMapping.Count}");
         LargeMap = GameController.IngameState.IngameUi.Map.LargeMap;
         UpdateStoredItems(false);
         return null;
