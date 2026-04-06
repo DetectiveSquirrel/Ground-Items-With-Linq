@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using ImGuiNET;
@@ -31,9 +32,10 @@ public class DrawingLabels
         if (Main.Settings.EnableTextDrawing)
             foreach (var entity in wantedItems)
             {
-                var text = entity.UniqueNameCandidates.Count != 0
+                var baseText = entity.UniqueNameCandidates.Count != 0
                     ? string.Join(" \\\n", entity.UniqueNameCandidates)
                     : entity.LabelText;
+                var text = AppendEstimatedValueText(baseText, entity);
 
                 var alertDrawStyle = defaultAlertDrawStyle with
                 {
@@ -199,5 +201,32 @@ public class DrawingLabels
         }
 
         return fullHeight + drawStyle.BorderWidth * 2;
+    }
+
+    private static string AppendEstimatedValueText(string text, CustomItemData entity)
+    {
+        var valueSettings = Main.Settings.EstimatedValueDisplaySettings;
+        if (!valueSettings.EnableEstimatedValueDisplay) return text;
+
+        var estimatedValue = entity.EstimatedValue;
+        if (estimatedValue < valueSettings.MinimumValueToDisplay) return text;
+
+        var formattedValue = FormatEstimatedValue(estimatedValue, valueSettings.MaxDecimals);
+        var templateText = valueSettings.ValueText?.Value ?? string.Empty;
+        var appendedText = templateText.Replace("%V", formattedValue);
+        if (string.IsNullOrEmpty(appendedText)) return text;
+
+        var lines = text.ReplaceLineEndings("\n").Split('\n');
+        if (lines.Length == 0) return text + appendedText;
+
+        lines[0] += appendedText;
+        return string.Join("\n", lines);
+    }
+
+    private static string FormatEstimatedValue(double value, int maxDecimals)
+    {
+        var clampedDecimals = Math.Clamp(maxDecimals, 0, 8);
+        var format = clampedDecimals == 0 ? "#,0" : $"#,0.{new string('#', clampedDecimals)}";
+        return value.ToString(format, CultureInfo.InvariantCulture);
     }
 }

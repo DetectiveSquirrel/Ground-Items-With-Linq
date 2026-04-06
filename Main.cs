@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -81,17 +81,31 @@ public class GroundItemsWithLinq : BaseSettingsPlugin<GroundItemsWithLinqSetting
         if (!Settings.IgnoreFullscreenPanels && inGameUi.FullscreenPanels.Any(x => x.IsVisible)) return;
         if (!Settings.IgnoreRightPanels && inGameUi.OpenRightPanel.IsVisible) return;
 
-        List<CustomItemData> wantedItems;
+        if (Settings.SortMode is null)
+        {
+            Settings.SortMode = new()
+            {
+                Values = [SortModes.None, SortModes.Distance, SortModes.EstimatedValueDescending],
+                Value = SortModes.Distance
+            };
+        }
 
-        if (Settings.OrderByDistance)
-            wantedItems = StoredCustomItems
-                .Where(item => item.IsWanted == true)
-                .OrderBy(group => group.DistanceCustom)
-                .ToList();
-        else
-            wantedItems = StoredCustomItems
-                .Where(item => item.IsWanted == true)
-                .ToList();
+        if (Settings.SortMode.Values is null || Settings.SortMode.Values.Count == 0)
+        {
+            Settings.SortMode.Values = [SortModes.None, SortModes.Distance, SortModes.EstimatedValueDescending];
+        }
+
+        if (string.IsNullOrEmpty(Settings.SortMode.Value))
+        {
+            Settings.SortMode.Value = SortModes.Distance;
+        }
+
+        var wantedItems = Settings.SortMode.Value switch
+        {
+            SortModes.Distance => StoredCustomItems.Where(item => item.IsWanted == true).OrderBy(item => item.DistanceCustom).ToList(),
+            SortModes.EstimatedValueDescending => StoredCustomItems.Where(item => item.IsWanted == true).OrderByDescending(item => item.EstimatedValue).ToList(),
+            _ => StoredCustomItems.Where(item => item.IsWanted == true).ToList()
+        };
 
         if (wantedItems.Count <= 0) return;
 

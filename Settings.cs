@@ -1,4 +1,4 @@
-﻿using ExileCore.Shared.Attributes;
+using ExileCore.Shared.Attributes;
 using ExileCore.Shared.Interfaces;
 using ExileCore.Shared.Nodes;
 using Newtonsoft.Json;
@@ -38,13 +38,23 @@ public class GroundItemsWithLinqSettings : ISettings
 
     public RangeNode<int> BorderWidth { get; set; } = new(1, 1, 20);
     public RangeNode<int> LabelShift { get; set; } = new(0, -600, 600);
-    public ToggleNode OrderByDistance { get; set; } = new(true);
+    public ListNode SortMode { get; set; } = new()
+    {
+        Values = new List<string>
+        {
+            SortModes.None,
+            SortModes.Distance,
+            SortModes.EstimatedValueDescending
+        },
+        Value = SortModes.Distance
+    };
 
     public ToggleNode EnableMapDrawing { get; set; } = new(true);
     public ColorNode MapLineColor { get; set; } = new(new Color(214, 0, 255, 255));
     public RangeNode<float> MapLineThickness { get; set; } = new(2.317f, 1f, 10f);
 
     public SocketDisplaySettings SocketDisplaySettings { get; set; } = new();
+    public EstimatedValueDisplaySettings EstimatedValueDisplaySettings { get; set; } = new();
 
     [Menu(@"Use a Custom '\config\custom_folder' folder")]
     public TextNode CustomConfigDir { get; set; } = new();
@@ -68,6 +78,15 @@ public class SocketDisplaySettings
 }
 
 [Submenu]
+public class EstimatedValueDisplaySettings
+{
+    public ToggleNode EnableEstimatedValueDisplay { get; set; } = new(true);
+    public RangeNode<float> MinimumValueToDisplay { get; set; } = new(1f, 0f, 1000f);
+    public RangeNode<int> MaxDecimals { get; set; } = new(0, 0, 8);
+    public TextNode ValueText { get; set; } = new(" [%Vc]");
+}
+
+[Submenu]
 public class UniqueIdentificationSettings
 {
     [JsonIgnore]
@@ -82,4 +101,11 @@ public class GroundRule(string name, string location, bool enabled)
     public string Name { get; set; } = name;
     public string Location { get; set; } = location;
     public bool Enabled { get; set; } = enabled;
+}
+
+public static class SortModes
+{
+    public const string None = "None";
+    public const string Distance = "Distance";
+    public const string EstimatedValueDescending = "Estimated Value";
 }
